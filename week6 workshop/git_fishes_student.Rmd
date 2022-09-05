@@ -119,7 +119,7 @@ First, write some code below to remove missing data
 
 ```{r, rmMiss}
 # Code to removing missing data from the `OA_activitydat_20190302_BIOL3207.csv` data frame. 
-data %>% drop_na()
+data <- data %>% drop_na()
 
 ```
 
@@ -127,18 +127,30 @@ Second, drop out irrelevant columns and check that there are no spelling issues 
 
 ```{r summaryTab}
 # Drop irrelevant columns
-drop_data<- data[,!names(data)%in% c('loc','comment')]
-drop_data <- data %>% select(-loc,-comment)
+drop_data <- data[,!names(data)%in% c('loc','comment','...1')]
+# drop_data <- data %>% select(-loc,-comment)
+drop_data
 
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
 checked_data2 <- drop_data$treatment %>% unique()
+
 cda <- drop_data %>% group_by(species,treatment) %>% mutate(species = as.factor(species))
 levels(cda$species)
 # Use flextable to render the summary table in a tidy format
 mean_data <- mean(drop_data)
 SE_data <- drop_data %>% summarise(sd())
+
+# cda <- drop_data %>% group_by(species,treatment) %>% mutate(species = as.factor(species))
+#  levels(cda$species)
+# Use flextable to render the summary table in a tidy format
+mean_sd <- list(mean=~mean(.x, na.rm = TRUE), 
+  sd = ~sd(.x, na.rm = TRUE)
+)
+drop_data %>% group_by(species,treatment,size) %>% summarise(across(where(is.numeric)&! animal_id, mean_sd)) %>% summarise(across(starts_with("sl"), .names = "mean&sd"))
+
 ```
+
 
 **STOP**: Before moving on, it's a good time to establish some good *GitHub* practices. You have just done an important step. It's time to save this file, stage it and commit it so that you have a record. Push these changes up using *GitHub Desktop*. It's important to do this frequently. It's probably not needed after every line of code, but it's good to do this when you have completed an important coding step. Of course, there's no harm in doing it more often. It will provide fine-scale tracking for you!
 
