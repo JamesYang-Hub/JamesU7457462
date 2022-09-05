@@ -94,7 +94,7 @@ Write your answer in the code chunk below:
 
 ```{r, loaddata, eval = FALSE, echo=TRUE}
 
-path <- "replace this text with your relative path to a file in the 'data/' folder"
+path <- "data/OA_activitydat_20190302_BIOL3207.csv"
   
 data <- read_csv(path)
 
@@ -106,7 +106,7 @@ Let's say that you added a new data folder that was inside an output folder (i.e
 
 ```{r, write, eval = FALSE, echo=TRUE}
 
-path <- "replace this text with your relative path"
+path <- "data/datatrack.txt"
 
 write_csv(data, file = path)
 
@@ -121,6 +121,7 @@ First, write some code below to remove missing data
 
 ```{r, rmMiss}
 # Code to removing missing data from the `OA_activitydat_20190302_BIOL3207.csv` data frame. 
+data %>% drop_na()
 
 ```
 
@@ -128,9 +129,11 @@ Second, drop out irrelevant columns and check that there are no spelling issues 
 
 ```{r summaryTab}
 # Drop irrelevant columns
+drop_data<- data[,!names(data)%in% c('loc','comment')]
+
 
 # Check spelling in species and treatment but also generate a summary table
-
+# drop_data%>% filter(species!=acantho|	whitedams|Ambon|Humbug |Lemon)
 # Use flextable to render the summary table in a tidy format
 
 ```
