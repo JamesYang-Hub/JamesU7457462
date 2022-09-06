@@ -119,7 +119,7 @@ First, write some code below to remove missing data
 
 ```{r, rmMiss}
 # Code to removing missing data from the `OA_activitydat_20190302_BIOL3207.csv` data frame. 
-data <- data %>% drop_na()
+data <- na.omit(data)
 data
 ```
 
@@ -127,9 +127,8 @@ Second, drop out irrelevant columns and check that there are no spelling issues 
 
 ```{r summaryTab}
 # Drop irrelevant columns
-drop_data <- data[,!names(data)%in% c('loc','comment','...1')]
-# drop_data <- data %>% select(-loc,-comment)
-drop_data
+# drop_data <- data[,!names(data)%in% c('loc','comment','...1')]
+drop_data <- data %>% select(-loc,-comment,-...1)
 
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
@@ -152,7 +151,6 @@ drop_data  %>% group_by(species,treatment,size)%>% summarise(across(where(is.num
 
 ```
 
-
 **STOP**: Before moving on, it's a good time to establish some good *GitHub* practices. You have just done an important step. It's time to save this file, stage it and commit it so that you have a record. Push these changes up using *GitHub Desktop*. It's important to do this frequently. It's probably not needed after every line of code, but it's good to do this when you have completed an important coding step. Of course, there's no harm in doing it more often. It will provide fine-scale tracking for you!
 
 > **Question 5**: The new version of your Rmarkdown file should now be up on *GitHub*. In the browser window click on your most recent commit. Have a look at the file versioning system. You will notice two files side-by-side. Describe what you notice is being presented online. What do the red and green highlights mean?
@@ -168,11 +166,11 @@ Ignoring figures can be important because they take up quite a lot of space in y
 `.gitignore` files are used to control what *Git* tracks and what it ignores. You should have created a new folder path: `output/figures/`. Write some code now to create a pretty figure using ggplot that shows the difference between control and acidification treatments for each of the fish species in the data set:
 
 ```{r}
-file.create("D:/S2 2022/BIOL3207/week6/cloning repo/JamesU7457462/.gitignore.txt")
+file.create("D:/S2 2022/BIOL3207/week6/cloning repo/JamesU7457462/.gitignore")
 dir.create("D:/S2 2022/BIOL3207/week6/cloning repo/JamesU7457462/week6 workshop/figures/")
 ```
 
-```{r, prettyfig, fig.align='center', fig.cap="add a legend here"}
+```{r, prettyfig, fig.align='center', fig.cap="fig1"}
 library(png)
 
 acantho_logo <- readPNG('figures/acantho.png')
@@ -192,10 +190,6 @@ ggplot(data , aes(x =species, y =activity,col=treatment)) +geom_boxplot()+ ggtit
 
 ```
 
-
-
-
-
 **Stretch Task**: The Clark et al. 2020 paper plots some pretty pictures on their figures. You have access to a folder called "pics/". Add the pics of the difference species from the "pics/" folder to your new plot. Explore the function `annotation_raster()` which might help you achieve this goal.
 
 Note the code chunk used to make the figure. It has a `fig.cap` argument. That means Rmarkdown knows it's a figure and it will allow you to create a figure reference call. In other words, we can refer to our Figure \@ref(fig:prettyfig) by referring to the label for the chunk. This will automatically make a legend for us too (assuming you add one in). The same concept applied to Tables but the legend goes above these.
@@ -211,7 +205,7 @@ ggsave('figures/1.png')
 
 ```{r}
 
-
+# The Desktop shows the changes in the window, like +figures/ 
 ```
 
 Last question for this task. I promise! It's important to think very carefully about what you track and ignore.
@@ -232,12 +226,11 @@ Now, lets create a new figure in the code block below that simplifies the one pr
 # You want to make changes to your collaborators figure in Task 5. Maybe you want to create a figure that focuses only on three fish species instead of the 5. More specifically, chromis, lemon, and acantho. Add code here to revise their figure to do that.
 ```
 
+\@ref(fig:prettyfig) 1 \@ref(fig:fig1)
+
 # **Task 7**
 
 This task involves creating and resolving conflicts. Conflicts in files are denoted with specific markers. They look like this when you open a file with conflicts.
-
-
-
 
 Resolving is easy. Decide on what changes you think are the best to proceed with and remove conflict markers.
 
