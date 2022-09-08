@@ -283,7 +283,7 @@ Here, run some statistical tests to determine, for each species, whether the con
 # mean_difference[i] <-  abs((drop_data %>%
 #                               filter(species==data_species[i]& treatment== 'control') %>%
 #                               summarise(mean = mean(activity)))-(drop_data %>%
-#         filter(species==data_species[i]& treatment== 'CO2') %>% 
+#         filter(species==data_species[i]& treatment== 'CO2') %>%
 #  summarise(mean = mean(activity))))
 #  pval[i] <- t.test(fit_control[3],fit_CO2[3])$p.value
 # conf[i]<- t.test(fit_control[3],fit_CO2[3])$conf.int
