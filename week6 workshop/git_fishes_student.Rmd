@@ -135,7 +135,7 @@ drop_data
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
 checked_data2 <- drop_data$treatment %>% unique()
-drop_data %>% group_by(species,animal_id) %>% summarise(,.groups = ) %>% unique()
+drop_data %>% group_by(species,animal_id) %>% summarise(,.groups ) %>% unique()
 cda <- drop_data %>% group_by(species,treatment) %>% mutate(species = as.factor(species))
 levels(cda$species)
 # Use flextable to render the summary table in a tidy format
@@ -320,9 +320,9 @@ table_sl <- fit2 %>% select(statistic,conf.low,conf.high,p.value,parameter)
 
 ```
 ```{r}
-control <- drop_data %>% filter(species=='humbug'& treatment== 'control') %>% select(activity)
-CO2 <- drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% select(activity)
-t.test(control,CO2)
+# control <- drop_data %>% filter(species=='humbug'& treatment== 'control') %>% select(activity)
+# CO2 <- drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% select(activity)
+# t.test(control,CO2)
 ```
 
 
@@ -341,7 +341,7 @@ Mean activity for `r "humbug"` in the control group was `r drop_data %>% filter(
 Now, using what you just learnt, describe what the null hypothesis being tested was and provide statistical evidence (t-statistic, df, and p-value) to support your conclusion about whether we can reject the null hypothesis. Again, make sure you use in-line code. Write you answer below:
 
 **Write your answer here**
-`r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity$p.value `
+`r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity[which(table_activity$species=='humbug'),] %>% select(p.value) `
 Re-analyse the data for a single species using permutations instead of a t-test. Do your results differ?
 
 > **Stretch Task**: If you really want a challenge try doing permutation tests for each species. Again, loops, functions or tidyverse (or even combinations might help).
@@ -349,6 +349,7 @@ Re-analyse the data for a single species using permutations instead of a t-test.
 ```{r, stretch2, echo=TRUE, eval=FALSE}
 # mean of different treatment 
 # the mean of activity about humbug is          , and the mean difference between two treatments is              , the confidential interval is  0.83~9.9	         
+ 
 
 
 ```
