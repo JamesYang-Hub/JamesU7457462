@@ -1,0 +1,1 @@
+"0"," drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% summarise(mean = mean(activity))"
