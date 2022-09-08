@@ -1,0 +1,3 @@
+"0","fit2<- drop_data %>% select(species,treatment,sl)%>% group_by(species) %>% summarise(broom::tidy(t.test(sl~treatment, data = cur_data())), .groups = ""keep"")"
+"0","fit2 %>% select(statistic,conf.low,conf.high,p.value,parameter)"
+"2","Adding missing grouping variables: `species`"
