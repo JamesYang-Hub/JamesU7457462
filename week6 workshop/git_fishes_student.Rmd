@@ -117,7 +117,7 @@ We're ready for some coding! Lets do some coding and wrangling of the `OA_activi
 
 First, write some code below to remove missing data
 
-```{r, rmMiss}
+```{r message=FALSE}
 # Code to removing missing data from the `OA_activitydat_20190302_BIOL3207.csv` data frame. 
 data <- na.omit(data)
 data
@@ -131,6 +131,7 @@ Second, drop out irrelevant columns and check that there are no spelling issues 
 # drop_data <- data[,!names(data)%in% c('loc','comment','...1')]
 # drop_data <- data %>% select(-loc,-comment,-...1)
 drop_data <- data[3:8]
+drop_data
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
 checked_data2 <- drop_data$treatment %>% unique()
@@ -250,8 +251,42 @@ Here, run some statistical tests to determine, for each species, whether the con
 
 > **Stretch Task**: You can of course do this for each species seperately, but those who want a challenge, think about how you might use a loop or even some wrangling methods you have already learnt from the tidyverse to run these tests across all 6 species in a single block of code. If you're familiar with functions, you can even think about writing your own function! All these strategies will avoid having to copy and paste large chunks of code. If you're repeating anything, writing functions and loops are good ways to simplify.
 
+```{r}
+fit_control <- drop_data %>% select(species,treatment,activity) %>%  filter(species=='acantho'& treatment== 'control')
+fit_control[3]
+```
+
+
 ```{r, stats, echo=TRUE, eval=TRUE}
-# Add your code here
+# 
+data_species <- c('acantho','ambon','chromis','humbug','lemon','whitedams')
+pval <- c()
+dfval <- c()
+mean_difference <- c()
+for (i in 1:6) {
+  fit_control <- drop_data %>% select(species,treatment,activity) %>%  filter(species==data_species[i]& treatment== 'control')
+  fit_CO2 <- drop_data %>% select(species,treatment,activity) %>% filter(species==data_species[i]& treatment== 'CO2')
+ mean_difference[i] <- mean(fit_control)-mean(fit_CO2)
+ pval[i] <- t.test(fit_control[3],fit_CO2[3])$p.value
+ dfval[i]<- t.test(fit_control[3],fit_CO2[3])$df.value
+
+}
+pval
+dfval
+#如果没有安装dplyr，rstatix和reshape2这三个R包，先去掉下面三行的#，运行进行安装
+# install.packages("BiocManager")
+# BiocManager::install("dplyr")
+# BiocManager::install("rstatix")
+# BiocManager::install("reshape2")
+fit1 <- drop_data %>% select(species,treatment,activity) %>% group_by(species) %>% summarise(broom::tidy(t.test(activity~treatment, data = cur_data())), .groups = "keep")
+fit1
+# library(dplyr)
+# library(rstatix)
+# library(reshape2)
+# result=melt(fit1) %>%
+#   group_by(species) %>%
+#   t_test(species ~ treatment)
+# result
 ```
 
 ```{r, table1, echo=TRUE, eval=TRUE, tab.cap = "write a caption here"}
