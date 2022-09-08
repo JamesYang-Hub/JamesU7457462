@@ -343,6 +343,33 @@ Now, using what you just learnt, describe what the null hypothesis being tested 
 **Write your answer here**
 `r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity[which(table_activity$species=='humbug'),] %>% select(p.value) `
 Re-analyse the data for a single species using permutations instead of a t-test. Do your results differ?
+```{r}
+# add 10000 loops variable
+n_reps <- 10000
+# create the sample distribution from 1 to 10000
+samp_dist <- rep(0,n_reps)
+# use the for loop to construct the loop structure
+for (i in 1:n_reps)
+{
+    # generate the permuated group 
+    permuted_data <- drop_data %>% filter(species=='humbug') %>% select(treatment,activity) 
+    # use the t.test to figure out the mean difference between permuted set_A and set_B
+    permuted_t_test_results <- t.test(permuted_data$activity[which(permuted_data$treatment=="control")],permuted_data$activity[which(permuted_data$treatment=="CO2")],var.equal=T)
+# loop again
+    samp_dist[i] <- permuted_t_test_results$statistic
+}
+```
+
+```{r}
+t_test_statistic<-t.test(permuted_data$activity[which(permuted_data$treatment=='control')],permuted_data$activity[which(permuted_data$treatment=='CO2')])$statistic
+plot_tibble <- tibble(value = samp_dist,extreme = (abs(samp_dist) > abs(t_test_statistic)))
+# use ggplot to create the histogram of plot_tibble
+ggplot(plot_tibble,aes(x=value,fill=extreme))+geom_histogram(bins=200)
+plot_tibble
+permutation_pvalue <- mean(plot_tibble$extreme)
+permutation_pvalue
+```
+
 
 > **Stretch Task**: If you really want a challenge try doing permutation tests for each species. Again, loops, functions or tidyverse (or even combinations might help).
 
