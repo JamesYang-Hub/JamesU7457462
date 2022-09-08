@@ -1,0 +1,3 @@
+"0","drop_data  %>% group_by(species,treatment,size)%>% summarise(across(where(is.numeric)&! animal_id, mean_sd))
+"
+"2","`summarise()` has grouped output by 'species', 'treatment'. You can override using the `.groups` argument."
