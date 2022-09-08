@@ -26,7 +26,7 @@ Throughout we are also going to learn a bit more about how to format Rmarkdown d
 
 ```{r loadpacks, message=FALSE, results='hide'}
 # Install a load of packages that we'll use. I'll show you a shortcut that I love to use. Try using the p_load function in the "pacman" package. p_load will execute both the install.packages and library commands in one shot so they only need to be used once to install pacman itself.
-install.packages("pacman", repos = "http://cran.us.r-project.org")
+# install.packages("pacman", repos = "http://cran.us.r-project.org")
 library(pacman)
 
 # Install bookdown for rendering because we'll need this. While we're at it, lets also install /load the tidyverse
@@ -135,7 +135,7 @@ drop_data
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
 checked_data2 <- drop_data$treatment %>% unique()
-drop_data %>% group_by(species,animal_id) %>% summarise(,.groups ) %>% unique()
+drop_data %>% group_by(species,animal_id) %>% summarise(,.groups = ) %>% unique()
 cda <- drop_data %>% group_by(species,treatment) %>% mutate(species = as.factor(species))
 levels(cda$species)
 # Use flextable to render the summary table in a tidy format
@@ -225,7 +225,7 @@ data1 <- drop_data[drop_data$species=='chromis'|drop_data$species=='lemon'| drop
 ggplot(data1,aes(x =species, y =activity,col=treatment))+geom_boxplot()+annotation_raster(acantho_logo,.5,1.5,40,50)+annotation_raster(chromis_logo,1.5,2.5,40,50)+annotation_raster(lemon_logo,2.5,3.5,40,50)
 ```
 
-\@ref(fig:prettyfig) 1 \@ref(fig:fig1)
+\@ref(fig:prettyfig)
 
 # **Task 7**
 
@@ -262,11 +262,13 @@ Here, run some statistical tests to determine, for each species, whether the con
 ```
 
 
+
 ```{r, stats, echo=TRUE, eval=TRUE}
-# 
+# #first
 # data_species <- c('acantho','ambon','chromis','humbug','lemon','whitedams')
 # pval <- c()
-# dfval <- c()
+# conf <- c()
+# sta <- c()
 # mean_difference <- c()
 # for (i in 1:6) {
 #   fit_control <- drop_data %>%
@@ -278,20 +280,23 @@ Here, run some statistical tests to determine, for each species, whether the con
 #     filter(species==data_species[i]& treatment== 'CO2')
 # 
 #   # fit_control_temp <- mean()
-#  mean_difference[i] <-  abs( ( drop_data %>% filter(species==data_species[i]& treatment=='control') %>% summarise(mean = mean(activity)))-   (     drop_data %>% filter(species==data_species[i]& treatment== 'CO2' ) %>% summarise(mean = mean(activity))
-#                              
-#                              
+# mean_difference[i] <-  abs((drop_data %>%
+#                               filter(species==data_species[i]& treatment== 'control') %>%
+#                               summarise(mean = mean(activity)))-(drop_data %>%
+#         filter(species==data_species[i]& treatment== 'CO2') %>% 
+#  summarise(mean = mean(activity))))
 #  pval[i] <- t.test(fit_control[3],fit_CO2[3])$p.value
-#  dfval[i]<- t.test(fit_control[3],fit_CO2[3])$df
-# 
+# conf[i]<- t.test(fit_control[3],fit_CO2[3])$conf.int
+# sta[i] <- t.test(fit_control[3],fit_CO2[3])$statistic
 # }
-# 
-# for (i in 1:6) { print(i)}
-# 
 # pval
-# dfval
+# conf
+# sta
+# mean_difference <- unlist(mean_difference)
 # mean_difference
-#如果没有安装dplyr，rstatix和reshape2这三个R包，先去掉下面三行的#，运行进行安装
+# tibble(data_species,pval,conf,mean_difference,sta)
+
+## second
 # install.packages("BiocManager")
 # BiocManager::install("dplyr")
 # BiocManager::install("rstatix")
@@ -326,10 +331,13 @@ table_sl <- fit2 %>% select(statistic,conf.low,conf.high,p.value,parameter)
 
 
 ```
+
 ```{r}
-# control <- drop_data %>% filter(species=='humbug'& treatment== 'control') %>% select(activity)
-# CO2 <- drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% select(activity)
-# t.test(control,CO2)
+control <- drop_data %>% filter(species=='humbug'& treatment== 'control') %>% select(activity)
+CO2 <- drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% select(activity)
+a<-t.test(control,CO2)
+a
+
 ```
 
 
