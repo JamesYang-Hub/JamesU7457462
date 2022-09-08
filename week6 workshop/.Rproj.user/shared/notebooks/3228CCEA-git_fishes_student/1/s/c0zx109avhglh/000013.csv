@@ -1,0 +1,6 @@
+"0","# "
+"0","# # fit_control <- as.numeric(as.character(fit_control))"
+"0","# fit_control <- as.numeric(unlist(fit_control))"
+"0","# "
+"0","# fit_control_temp <-mean(fit_control)"
+"0",""
