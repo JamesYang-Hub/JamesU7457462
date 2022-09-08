@@ -298,13 +298,20 @@ Here, run some statistical tests to determine, for each species, whether the con
 # BiocManager::install("reshape2")
 # 
 # library(dplyr)
-# library(rstatix)
+
 # library(reshape2)
 # result=melt(fit1) %>%
 #   group_by(species) %>%
 #   t_test(species ~ treatment)
 # result
 # Provide the difference in means, their 95% confidence intervals, t-statistic, df and p-value.
+
+## this one
+library(rstatix)
+drop_data %>%
+  group_by(species) %>%
+  t_test(activity ~ treatment,var.equal=T)
+## or this one
 fit1 <- drop_data %>% select(species,treatment,activity) %>% group_by(species) %>% summarise(broom::tidy(t.test(activity~treatment, data = cur_data())), .groups = "keep")
 fit1 %>% select(statistic,conf.low,conf.high,p.value,parameter)
 fit2<- drop_data %>% select(species,treatment,sl)%>% group_by(species) %>% summarise(broom::tidy(t.test(sl~treatment, data = cur_data())), .groups = "keep")
@@ -343,6 +350,8 @@ Now, using what you just learnt, describe what the null hypothesis being tested 
 **Write your answer here**
 `r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity[which(table_activity$species=='humbug'),] %>% select(p.value) `
 Re-analyse the data for a single species using permutations instead of a t-test. Do your results differ?
+
+
 ```{r}
 # add 10000 loops variable
 n_reps <- 10000
@@ -352,7 +361,7 @@ samp_dist <- rep(0,n_reps)
 for (i in 1:n_reps)
 {
     # generate the permuated group 
-    permuted_data <- drop_data %>% filter(species=='humbug') %>% select(treatment,activity) 
+    permuted_data <- drop_data %>% filter(species=='humbug') %>% select(treatment,activity) %>% mutate(treatment=treatment[sample(row_number())])
     # use the t.test to figure out the mean difference between permuted set_A and set_B
     permuted_t_test_results <- t.test(permuted_data$activity[which(permuted_data$treatment=="control")],permuted_data$activity[which(permuted_data$treatment=="CO2")],var.equal=T)
 # loop again
@@ -367,17 +376,15 @@ plot_tibble <- tibble(value = samp_dist,extreme = (abs(samp_dist) > abs(t_test_s
 ggplot(plot_tibble,aes(x=value,fill=extreme))+geom_histogram(bins=200)
 plot_tibble
 permutation_pvalue <- mean(plot_tibble$extreme)
-permutation_pvalue
+permutation_pvalue #0.54
+# quite different with previous result
 ```
 
 
 > **Stretch Task**: If you really want a challenge try doing permutation tests for each species. Again, loops, functions or tidyverse (or even combinations might help).
 
 ```{r, stretch2, echo=TRUE, eval=FALSE}
-# mean of different treatment 
-# the mean of activity about humbug is          , and the mean difference between two treatments is              , the confidential interval is  0.83~9.9	         
- 
-
+	         
 
 ```
 
