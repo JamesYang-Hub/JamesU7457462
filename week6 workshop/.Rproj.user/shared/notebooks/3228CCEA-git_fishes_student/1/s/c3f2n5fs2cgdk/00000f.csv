@@ -1,0 +1,29 @@
+"0","# Install a load of packages that we'll use. I'll show you a shortcut that I love to use. Try using the p_load function in the ""pacman"" package. p_load will execute both the install.packages and library commands in one shot so they only need to be used once to install pacman itself."
+"0","install.packages(""pacman"", repos = ""http://cran.us.r-project.org"")"
+"2","WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+"
+"2","trying URL 'http://cran.us.r-project.org/bin/windows/contrib/4.2/pacman_0.5.1.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 389611 bytes (380 KB)
+"
+"2","downloaded 380 KB
+
+"
+"1","程序包‘pacman’打开成功，MD5和检查也通过
+"
+"1","
+"
+"1",""
+"1","下载的二进制程序包在
+	C:\Users\samsung\AppData\Local\Temp\RtmpEJfWDR\downloaded_packages里"
+"1",""
+"1","
+"
+"0","library(pacman)"
+"0",""
+"0","# Install bookdown for rendering because we'll need this. While we're at it, lets also install /load the tidyverse"
+"0","p_load(bookdown, tidyverse, ggforce, flextable, latex2exp, png, magick) # basically just list all the packages you want here"
+"0",""
