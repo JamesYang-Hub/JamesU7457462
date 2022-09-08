@@ -130,12 +130,12 @@ Second, drop out irrelevant columns and check that there are no spelling issues 
 # Drop irrelevant columns
 # drop_data <- data[,!names(data)%in% c('loc','comment','...1')]
 # drop_data <- data %>% select(-loc,-comment,-...1)
-drop_data <- data[3:8]
+drop_data <- data[,c(3:8)]
 drop_data
 # Check spelling in species and treatment but also generate a summary table
 checked_data1 <- drop_data$species %>% unique()
 checked_data2 <- drop_data$treatment %>% unique()
-
+drop_data %>% group_by(species,animal_id) %>% summarise(,.groups = ) %>% unique()
 cda <- drop_data %>% group_by(species,treatment) %>% mutate(species = as.factor(species))
 levels(cda$species)
 # Use flextable to render the summary table in a tidy format
@@ -219,7 +219,7 @@ This task involves teaming up with a collaborator. Exchange *GitHub* username de
 
 Now, lets create a new figure in the code block below that simplifies the one produced in **Task 5**. Instead of all species, lets just plot three of the species (chromis, lemon, and acantho). In the figure code chunk make sure you add the necessary arguments (e.g., `fig.cap`) so that you can refer to Figure \@ref(fig:collabFig).
 
-```{r, collabFig,fig.cap="fig2", echo=TRUE, eval=TRUE}
+```{r collabFig,fig.cap="fig2", echo=TRUE, eval=TRUE}
 # You want to make changes to your collaborators figure in Task 5. Maybe you want to create a figure that focuses only on three fish species instead of the 5. More specifically, chromis, lemon, and acantho. Add code here to revise their figure to do that.
 data1 <- drop_data[drop_data$species=='chromis'|drop_data$species=='lemon'| drop_data$species=='acantho',]
 ggplot(data1,aes(x =species, y =activity,col=treatment))+geom_boxplot()+annotation_raster(acantho_logo,.5,1.5,40,50)+annotation_raster(chromis_logo,1.5,2.5,40,50)+annotation_raster(lemon_logo,2.5,3.5,40,50)
@@ -252,34 +252,51 @@ Here, run some statistical tests to determine, for each species, whether the con
 > **Stretch Task**: You can of course do this for each species seperately, but those who want a challenge, think about how you might use a loop or even some wrangling methods you have already learnt from the tidyverse to run these tests across all 6 species in a single block of code. If you're familiar with functions, you can even think about writing your own function! All these strategies will avoid having to copy and paste large chunks of code. If you're repeating anything, writing functions and loops are good ways to simplify.
 
 ```{r}
-fit_control <- drop_data %>% select(species,treatment,activity) %>%  filter(species=='acantho'& treatment== 'control')
-fit_control[3]
+ drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% summarise(mean = mean(activity))
+# 
+# # fit_control <- as.numeric(as.character(fit_control))
+# fit_control <- as.numeric(unlist(fit_control))
+# 
+# fit_control_temp <-mean(fit_control)
+
 ```
 
 
 ```{r, stats, echo=TRUE, eval=TRUE}
 # 
-data_species <- c('acantho','ambon','chromis','humbug','lemon','whitedams')
-pval <- c()
-dfval <- c()
-mean_difference <- c()
-for (i in 1:6) {
-  fit_control <- drop_data %>% select(species,treatment,activity) %>%  filter(species==data_species[i]& treatment== 'control')
-  fit_CO2 <- drop_data %>% select(species,treatment,activity) %>% filter(species==data_species[i]& treatment== 'CO2')
- mean_difference[i] <- mean(fit_control)-mean(fit_CO2)
- pval[i] <- t.test(fit_control[3],fit_CO2[3])$p.value
- dfval[i]<- t.test(fit_control[3],fit_CO2[3])$df.value
-
-}
-pval
-dfval
+# data_species <- c('acantho','ambon','chromis','humbug','lemon','whitedams')
+# pval <- c()
+# dfval <- c()
+# mean_difference <- c()
+# for (i in 1:6) {
+#   fit_control <- drop_data %>%
+#     select(species,treatment,activity) %>%
+#     filter(species==data_species[i]& treatment== 'control')
+# 
+#   fit_CO2 <- drop_data %>%
+#     select(species,treatment,activity) %>%
+#     filter(species==data_species[i]& treatment== 'CO2')
+# 
+#   # fit_control_temp <- mean()
+#  mean_difference[i] <-  abs( ( drop_data %>% filter(species==data_species[i]& treatment=='control') %>% summarise(mean = mean(activity)))-   (     drop_data %>% filter(species==data_species[i]& treatment== 'CO2' ) %>% summarise(mean = mean(activity))
+#                              
+#                              
+#  pval[i] <- t.test(fit_control[3],fit_CO2[3])$p.value
+#  dfval[i]<- t.test(fit_control[3],fit_CO2[3])$df
+# 
+# }
+# 
+# for (i in 1:6) { print(i)}
+# 
+# pval
+# dfval
+# mean_difference
 #如果没有安装dplyr，rstatix和reshape2这三个R包，先去掉下面三行的#，运行进行安装
 # install.packages("BiocManager")
 # BiocManager::install("dplyr")
 # BiocManager::install("rstatix")
 # BiocManager::install("reshape2")
-fit1 <- drop_data %>% select(species,treatment,activity) %>% group_by(species) %>% summarise(broom::tidy(t.test(activity~treatment, data = cur_data())), .groups = "keep")
-fit1
+# 
 # library(dplyr)
 # library(rstatix)
 # library(reshape2)
@@ -287,11 +304,27 @@ fit1
 #   group_by(species) %>%
 #   t_test(species ~ treatment)
 # result
+# Provide the difference in means, their 95% confidence intervals, t-statistic, df and p-value.
+fit1 <- drop_data %>% select(species,treatment,activity) %>% group_by(species) %>% summarise(broom::tidy(t.test(activity~treatment, data = cur_data())), .groups = "keep")
+fit1 %>% select(statistic,conf.low,conf.high,p.value,parameter)
+fit2<- drop_data %>% select(species,treatment,sl)%>% group_by(species) %>% summarise(broom::tidy(t.test(sl~treatment, data = cur_data())), .groups = "keep")
+fit2 %>% select(statistic,conf.low,conf.high,p.value,parameter)
 ```
 
 ```{r, table1, echo=TRUE, eval=TRUE, tab.cap = "write a caption here"}
 # Using the resulting object created above, which should be a table with all the summary statistics, t, df and p-value for each species create a table. Note that there is a tab.cap argument in the chunk arguments. Write a caption here. 
+
+table_activity<-fit1 %>% select(statistic,conf.low,conf.high,p.value,parameter)
+table_sl <- fit2 %>% select(statistic,conf.low,conf.high,p.value,parameter)
+
+
 ```
+```{r}
+control <- drop_data %>% filter(species=='humbug'& treatment== 'control') %>% select(activity)
+CO2 <- drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% select(activity)
+t.test(control,CO2)
+```
+
 
 Now that you have a table, you can reference it within a document. For example, you can make a call to Table \@ref(tab:table1) by referring to the name of the code chunk. When you knit the html it will create a hyperlink to your table and insert a legend above the table for you. How cool is that!?
 
@@ -303,18 +336,21 @@ Moving forward on that you can also add in an object and whatever that objects v
 
 This is all **VERY** cool because that means if your code or data change than you can update your entire report very fast. It's also 100% reproducible. We know exactly where every single value in your report comes from. This is all pretty helpful when you want to check your code and report side-by-side. Now that you have a bit more detail fill in the following:
 
-Mean activity for `r "species name here"` in the control group was `r "add code to place mean for control"` (s / min) compared to the OA treatment group, which was `r "mean for acidificaton treatment"` (s / min). The difference between control and OA treatment means was `r "code mean difference bw treatment"` (s / min) (95% CI: `r "code for lower CI"` to `r "code for upper CI"`).
+Mean activity for `r "humbug"` in the control group was `r drop_data %>% filter(species=='humbug'& treatment== 'control') %>% summarise(mean = mean(activity))` (s / min) compared to the OA treatment group, which was `r  drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% summarise(mean = mean(activity))` (s / min). The difference between control and OA treatment means was `r "(drop_data %>% filter(species=='humbug'& treatment== 'control') %>% summarise(mean = mean(activity)))-(drop_data %>% filter(species=='humbug'& treatment== 'CO2') %>% summarise(mean = mean(activity)))` (s / min) (95% CI: `r table_activity %>% filter(species=='humbug') %>% select(conf.low)` to `r table_activity %>% filter(species=='humbug') %>% select(conf.high)`).
 
 Now, using what you just learnt, describe what the null hypothesis being tested was and provide statistical evidence (t-statistic, df, and p-value) to support your conclusion about whether we can reject the null hypothesis. Again, make sure you use in-line code. Write you answer below:
 
 **Write your answer here**
-
+`r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity$p.value `
 Re-analyse the data for a single species using permutations instead of a t-test. Do your results differ?
 
 > **Stretch Task**: If you really want a challenge try doing permutation tests for each species. Again, loops, functions or tidyverse (or even combinations might help).
 
 ```{r, stretch2, echo=TRUE, eval=FALSE}
-# Add your code here.
+# mean of different treatment 
+# the mean of activity about humbug is          , and the mean difference between two treatments is              , the confidential interval is  0.83~9.9	         
+
+
 ```
 
 Below. Add a few sentences for the species (or multiple species) you talked about above to describe the permutation results:
