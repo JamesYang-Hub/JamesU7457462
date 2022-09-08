@@ -1,0 +1,5 @@
+"0","# Use ggsave to save the figure"
+"0",""
+"0","ggsave('figures/1.png')"
+"2","Saving 7 x 7 in image
+"
