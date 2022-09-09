@@ -312,6 +312,7 @@ Here, run some statistical tests to determine, for each species, whether the con
 # Provide the difference in means, their 95% confidence intervals, t-statistic, df and p-value.
 
 ## this one
+Íinstall.packages("rstatix")
 library(rstatix)
 drop_data %>%
   group_by(species) %>%
@@ -356,7 +357,7 @@ Mean activity for `r "humbug"` in the control group was `r drop_data %>% filter(
 Now, using what you just learnt, describe what the null hypothesis being tested was and provide statistical evidence (t-statistic, df, and p-value) to support your conclusion about whether we can reject the null hypothesis. Again, make sure you use in-line code. Write you answer below:
 
 **Write your answer here**
-`r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of  is that the p-value is " table_activity[which(table_activity$species=='humbug'),] %>% select(p.value) `
+`r "The NULL hypothesis is that there is no difference between two treatment about humbug specie  , the evidence of rejection is that the p-value is " table_activity[which(table_activity$species=='humbug'),] %>% select(p.value) `
 Re-analyse the data for a single species using permutations instead of a t-test. Do your results differ?
 
 
