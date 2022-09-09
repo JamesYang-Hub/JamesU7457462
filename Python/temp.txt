@@ -23,3 +23,24 @@ def ppm_to_pssm(ppm):
     ppm=numpy.log2(ppm)-numpy.log2(0.25)
     return ppm
 print(ppm_to_pssm(ppm1))
+
+def seq_to_indices(seq: str) -> list:
+    list1=['A','C','G','T']
+    list2=[]
+    for j in range(0,4):
+        for i in seq:
+            if list1[j]==i:
+                list2.append(j)
+    return list2
+
+
+def score_indexed_seq(pssm, indexed_seq):
+    seq_index=seq_to_indices(indexed_seq)
+    list3=[]
+    for i,j in enumerate(seq_index):
+        list3.append(pssm[j][i])
+    return list3
+
+seq3="ACAAGT"   
+
+print(score_indexed_seq(pssm1,seq3))
