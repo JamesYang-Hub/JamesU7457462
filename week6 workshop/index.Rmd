@@ -1,0 +1,16 @@
+---
+title: "index"
+output: html_document
+date: "2022-09-09"
+---
+
+>**Question 9**: Think about some things that can be improved in their code. 
+List 3 things you think could be improved and provide a brief explanation for why.
+
+# 1)
+# 2) 
+# 3)
+```{r}
+oaa <- read.csv('data/OA_activitydat_20190302.csv', header=TRUE)
+```
+
