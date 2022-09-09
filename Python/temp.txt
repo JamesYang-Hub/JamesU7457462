@@ -1,0 +1,25 @@
+import numpy as np
+
+pwm1 = np.array(
+    [[61, 16, 352, 3, 354, 268, 360, 222, 155, 56, 83, 82, 82, 68, 77],
+     [145, 46, 0, 10, 0, 0, 3, 2, 44, 135, 147, 127, 118, 107, 101],
+     [152, 18, 2, 2, 5, 0, 20, 44, 157, 150, 128, 128, 128, 139, 140],
+     [31, 309, 35, 374, 30, 121, 6, 121, 33, 48, 31, 52, 61, 75, 71]])
+
+
+def pwm_to_ppm(pwm, pseudocount=0):
+    pwm1=np.array(pwm, dtype = float) + pseudocount
+    sum1 = pwm1.sum(axis=0)
+    for i in range(pwm1.shape[0]):
+        for j in range(pwm1.shape[1]):
+            pwm1[i, j] = pwm1[i, j]/sum1[i]
+    return pwm1
+
+
+ppm1=pwm_to_ppm(pwm1)
+print(ppm1)
+import math
+def ppm_to_pssm(ppm):
+    ppm=numpy.log2(ppm)-numpy.log2(0.25)
+    return ppm
+print(ppm_to_pssm(ppm1))
