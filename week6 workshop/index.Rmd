@@ -7,7 +7,7 @@ date: "2022-09-09"
 >**Question 9**: Think about some things that can be improved in their code. 
 List 3 things you think could be improved and provide a brief explanation for why.
 
-# 1)
+# 1)A large amount of work can be solved using for loops
 # 2) 
 # 3)
 ```{r}
