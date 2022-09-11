@@ -1,0 +1,36 @@
+from pickle import NONE
+
+
+def func(name, age, edu, gender='男'):
+    if len(name) <= 0 or len(name) > 5:
+        return None
+    if age < 0 or age > 120:
+        return None
+    if gender not in ('男', '女', '未知'):
+        return None
+    if edu not in ('小学', '初中', '高中', '本科', '硕士', '博士', '博士后'):
+        return None
+    stu = {"name": name, "age": age, "edu": edu, "gender": gender}
+    return stu
+
+
+items = []
+while True:
+    content = input('是否继续录入学生信息(Y/N 输入N退出):')
+    if content.upper() == 'N':
+        break
+    else:
+        name = input('请输入姓名:')
+        gender = input('请输入性别:')
+        age = input('请输入年龄:')
+        edu = input('请输入学历:')
+        if gender == '':
+            stu = func(name, int(age), edu)
+        else:
+            stu = func(name, int(age), edu, gender)
+        if stu is None:
+            print('输入有误，该条信息未录入成功')
+        else:
+            items.append(stu)
+print(items)
+
