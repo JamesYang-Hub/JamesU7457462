@@ -1,0 +1,18 @@
+---
+title: "exercise of nyc flights"
+output: html_document
+date: "2022-09-22"
+---
+
+```{r}
+
+```
+
+```{r}
+
+library("nycflights13")
+library(tidyverse)
+nycflights13::flights
+select(flights,time_hour,air_time,everything())
+```
+
