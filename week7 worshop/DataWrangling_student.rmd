@@ -1,6 +1,6 @@
 ---
 title: "Data Wrangling"
-author: "<your name and u number>"
+author: "<Sihao Yang U7457462 >"
 date: "23 September 2022"
 output:
   html_document: default
@@ -68,7 +68,7 @@ The TL;DR is that ALT is what was sequenced in the evolved sample while REF is w
 Let's start by naively calling `read_xls()` to read in the "ecoli_variants_calls.xlsx" file.
 
 ```{r echo=FALSE}
-calls_file <- "ecoli_variants_calls.xlsx"
+calls_file <- "data/ecoli_variants_calls.xlsx"
 read_xlsx(calls_file)
 ```
 
@@ -104,9 +104,13 @@ Then we'll use the function `do.call()` to make the variable assignment.
 
 ```{r}
 do.call("<-",list(paste(sample_ids[1],"_calls",sep = ""),read_xlsx(calls_file,sheet=sample_ids[1])))
+
 ```
 
 Take a moment to read the help page for `do.call()` to understand why that works.
+```{r}
+?do.call
+```
 
 Did you notice a new variable with the desired name appear in your R Environment? Let's confirm it using `glimpse()`.
 
@@ -117,6 +121,10 @@ glimpse(SRR2584863_calls)
 Now enter code in the block below to import the remaining sheets into variables using the same naming convention.
 
 ```{r}
+do.call("<-",list(paste(sample_ids[2],"_calls",sep = ""),read_xlsx(calls_file,sheet=sample_ids[2])))
+do.call("<-",list(paste(sample_ids[3],"_calls",sep = ""),read_xlsx(calls_file,sheet=sample_ids[3])))
+sample_ids[2]
+sample_ids[3]
 ```
 
 At this point, the calls from each sample are stored in a nice, tidy tibble. But collectively this is not a tidy solution! For this to be tidy data, we would have one tibble which includes all of the data, which sample_id as a variable in a new column.
@@ -126,13 +134,20 @@ We can use the function `add_column()` to create a new column as desired, for ex
 ```{r}
 add_column(SRR2584863_calls,sample_id = sample_ids[1])
 ```
+```{r}
+SRR2584866_calls<-add_column(SRR2584866_calls,sample_id = sample_ids[2])
+SRR2589044_calls<-add_column(SRR2589044_calls,sample_id = sample_ids[3])
+
+```
+
 
 Now complete the code block below to create an 801 × 7 tidy tibble containing all of the data:
 
 ```{r}
-calls <- bind_rows(...
+calls <- bind_rows(SRR2584863_calls,SRR2584866_calls,SRR2589044_calls)
                    
 str(calls)
+calls
 ```
 
 Finally, we have imported and tidied the variant calls.
@@ -180,9 +195,12 @@ filter(calls, REF == "A" | REF == "G")
 Now for a challenge. Recall that transition mutations are between A and G or between C and T. Complete the code block below to extract and count the transition mutations.
 
 ```{r}
-transitions <- 
-  
+
+
+transitions <- calls %>% filter((REF == "A" & ALT == "G") | REF == "G" & ALT == "A")
+
 n_transitions <- dim(transitions)[1]
+n_transitions
 ```
 
 ## Mutate
@@ -194,25 +212,26 @@ Data transformation often requires the creation of new columns based on the valu
 We can use mutate to easily add a PROB column to the calls tibble:
 
 ```{r}
-calls %>% mutate(PROB = 1 - (10^-(QUAL/10)))
+calls <- calls %>% mutate(PROB = 1 - (10^-(QUAL/10)))
 ```
 
 The quality scores are generally very high, and thus the probabilities are generally very close to 1. A few, however, are not. Complete the code block below to extract the variants (rows) for which the probability is less than 0.99.
 
 ```{r}
-
+calls%>% filter(PROB<0.99)
 ```
 
 By now you will have noticed that sometimes REF is a sequence rather than a nucleotide, and likewise with ALT. That is because the variant data includes both single nucleotide polymorphisms (SNPs) as well as length polymorphisms such as insertions and deletions (collectively "indels"). We can identify the indels when the lengths of REF and ALT are not the same. We will do this using the function `nchar()` which counts the number of characters in a string.
 
 ```{r}
-calls %>% mutate(INDEL = (nchar(ALT) != nchar(REF)))
+calls <- calls %>% mutate(INDEL = (nchar(ALT) != nchar(REF)))
+calls
 ```
 
 Above you will have seen that the lowest quality variants (specifically the 17 with probability less than 0.99) are majority indels. Create a plot that compares the quality distributions of SNPs (INDEL = FALSE) and indels (INDEL = TRUE) by completing the code block below.
 
 ```{r}
-
+calls%>%ggplot(aes(y=QUAL,x=POS,col=INDEL))+geom_jitter(width = 1)+geom_smooth()
 ```
 
 It certainly appears that indel calls tend to be of lower quality, which makes sense when you understand high-throughput sequencing technology
@@ -228,13 +247,13 @@ calls %>% group_by(sample_id) %>% summarise(n = n())
 Use this same approach in the code block below to count the numbers of indels and SNPs.
 
 ```{r}
-
+calls %>% group_by(INDEL) %>% summarise(n = n())
 ```
 
 You can also group by multiple variables, separating them by a comma in the function call. Do so to modify your previous code so that it counts the numbers of indels and SNPs *in each of the three samples*.
 
 ```{r}
-
+calls%>% group_by(sample_id,INDEL)%>% select(sample_id,INDEL)%>% summarise(n = n())
 ```
 
 Above we used a visualisation to compare the quality distributions of SNPs and indels. Let's now use  `group_by()` and `summarise()` to calculate the mean quality score for each type of polymorphism.
@@ -275,9 +294,17 @@ In particular, the sample_id/POS pair uniquely identifies a variant in both file
 To begin, we need to import the data from "ecoli_variants_details.xlsx" into a single tibble called "details". Noting that this file has a similar structure to the one you have already imported, copy your previous code into the block below and replace "calls" with "details". Take care doing this, as it is easy to make a mistake.
 
 ```{r}
-details_file <- "ecoli_variants_details.xlsx"
+details_file <- "data/ecoli_variants_details.xlsx"
 sample_ids <- excel_sheets(details_file)
-...
+sample_ids
+do.call("<-",list(paste(sample_ids[1],"_details",sep = ""),read_xlsx(details_file,sheet=sample_ids[1])))
+do.call("<-",list(paste(sample_ids[2],"_details",sep = ""),read_xlsx(details_file,sheet=sample_ids[2])))
+do.call("<-",list(paste(sample_ids[3],"_details",sep = ""),read_xlsx(details_file,sheet=sample_ids[3])))
+SRR2584863_details <- add_column(SRR2584863_details,sample_id = sample_ids[1])
+SRR2584866_details<- add_column(SRR2584866_details,sample_id = sample_ids[2])
+SRR2589044_details <- add_column(SRR2589044_details,sample_id = sample_ids[3])
+details <- bind_rows(SRR2584863_details,SRR2584866_details,SRR2589044_details)
+details
 ```
 
 In this case, the two tibbles (calls and details) have conformal rows and it is straightforward to bind them together.
@@ -285,6 +312,7 @@ In this case, the two tibbles (calls and details) have conformal rows and it is 
 ```{r}
 variants <- bind_cols(calls,details)
 glimpse(variants)
+?bind_cols
 ```
 
 Though this works, we are left with redundant columns whose redundant names required modification. Moreover, this only works because we have assumed -- correctly in this case -- that the rows were identically ordered.
@@ -322,7 +350,8 @@ all_equal(inner_join(calls %>% arrange(QUAL),details,by=c("POS","sample_id","CHR
 Before continuing, we'll redefine the tibble variants using this neater, non-redundant version:
 
 ```{r}
-variants <- inner_join(calls,details,by=c("POS","sample_id","CHROM"))
+variants <- inner_join(calls,details,copy=F,by=c("POS","sample_id","CHROM"))
+variants
 ```
 
 ## Reshaping data frames
@@ -333,7 +362,7 @@ Here's a very simple application. We'll use `group_by()` and `summarise()` to re
 
 ```{r}
 variants %>%
-  group_by(sample_id, CHROM, INDEL) %>%
+  group_by(sample_id, CHROM, INDEL.x) %>%
   summarise(mean_QUAL = mean(QUAL),sd_QUAL = sd(QUAL)) 
 ```
 
@@ -341,7 +370,7 @@ Then we will use `pivot_wider()` so that the per-sample means and standard devia
 
 ```{r}
 variants %>%
-  group_by(sample_id, CHROM, INDEL) %>%
+  group_by(sample_id, CHROM, INDEL.x) %>%
   summarise(mean_QUAL = mean(QUAL),sd_QUAL = sd(QUAL)) %>%
   pivot_wider(names_from = sample_id, values_from = c(mean_QUAL,sd_QUAL))
 ```
