@@ -1,0 +1,387 @@
+---
+title: "Data Wrangling"
+author: "<your name and u number>"
+date: "23 September 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction to the Workshop
+
+Data wrangling is the art of getting your data into R in a useful form for visualisation and modelling. Wrangling is critical because rarely does your data come in the desired form for subsequent investigation, even when you are the one who has collected it! R, and the extended tidyverse in particular, is incredibly useful for data wrangling. It is impossible to cover the extent of functionality across many packages, and so this workshop will focus on some core functions used to import, tidy and transform data in R.
+
+## Introduction to the Data
+
+In 2016, Tenaillon and colleagues reported on the propagation of 12 populations of *Escherichia coli* for more than 50,000 generations in a glucose-limited minimal medium. This medium was supplemented with citrate which *E. coli* cannot metabolize in the aerobic conditions of the experiment. Sequencing of the populations at regular time points revealed that spontaneous citrate-using mutants (Cit+) appeared in a population of *E.coli* (designated Ara-3) at around 31,000 generations. Eventually, Cit+ mutants became the dominant population as the experimental growth medium contained a high concentration of citrate relative to glucose. Around the same time that this mutation emerged, another phenotype become prominent in the Ara-3 population. Many *E. coli* began to develop excessive numbers of mutations, meaning they became hypermutable.
+
+Strains from generation 0 to generation 50,000 were sequenced, including ones that were both Cit+ and Cit- and hypermutable in later generations. We will be considering a subset of the data in what follows. Specifically, we will use sequencing data from three clones isolated at various stages of the long-term evolution experiment. 
+
+```{r table1, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+| sample_id     | clone    | generation | Cit | hypermutable |
+|:-------------:|:--------:|:----------:|:---:|:------------:|
+| SRR2589044    | REL2181A |   5,000     |  ?  | +            |
+| SRR2584863    | REL7179B |   15,000    |  ?  | +            |
+| SRR2584866    | REL11365 |   50,000    |  +  | +            |
+"
+cat(tabl)
+```
+
+## Preliminaries
+
+### Libraries and Packages
+
+Your first block of code should install any packages and load in the corresponding libraries. Today we will be using tidyverse as well as readxl. 
+
+```{r echo=FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+### Import
+
+Download the files "ecoli_variants_details.xlsx" and "ecoli_variants_calls.xlsx" from the course Wattle site. Take a look at these Excel files if you can, and note that each is composed of three sheets. The name of the sheet corresponds to the id of the sample whose data that sheet contains.
+
+The calls file contains the mutations sequenced in each of the samples and has the following structure:
+
+```{r table2, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+| column     | info    |
+|:-------------:|:--------:|
+| CHROM	    | contig location where the variation occurs |
+| POS    | position within the contig where the variation occurs |
+| ID    | recorded as NA until we annotation information is added |
+| REF   | reference genotype (forward strand) | 
+| ALT   | sample genotype (forward strand) | 
+| QUAL    | Phred-scaled probability that call (ALT) is correct |
+"
+cat(tabl)
+```
+
+The TL;DR is that ALT is what was sequenced in the evolved sample while REF is what was present in the initial strain.
+
+Let's start by naively calling `read_xls()` to read in the "ecoli_variants_calls.xlsx" file.
+
+```{r echo=FALSE}
+calls_file <- "ecoli_variants_calls.xlsx"
+read_xlsx(calls_file)
+```
+
+It looks like this only read in the first sheet SRR2584863. Fortunately, `read_xls()` is prepared for multisheet Excel files. We can use the function `excel_sheets()` to get the names of the sheets.
+
+```{r echo=FALSE}
+# using the variable name sample_ids because that is how the sheets were named
+sample_ids <- excel_sheets(calls_file)
+sample_ids
+```
+
+Now we can reference each sheet by name to import them using `read_xlsx()`. To read in the first sheet by name, we indicate that sheet as an argument in the function call.
+
+```{r echo=FALSE}
+read_xlsx(calls_file,sheet=sample_ids[1])
+```
+
+Since there are only three sheets, we'll go ahead and read them in one at a time; however, you may wish to read the documentation for `read_xlsx()` or search online to see how to vectorise this. We could start by assigning the first sheet as:
+
+    SRR2584863_calls <- read_xlsx(calls_file,sheet=sample_ids[1])
+    
+This works, but it exposes the code to errors if there are changes to the file. What we really want is 
+
+    sample_ids[1]_calls <- read_xlsx(calls_file,sheet=sample_ids[1])
+    
+except that is not valid syntax in R. However, we can do this with some clever code. First, we'll use the string function paste() to build the variable name.
+
+```{r}
+paste(sample_ids[1],"_calls",sep = "")
+```
+
+Then we'll use the function `do.call()` to make the variable assignment.
+
+```{r}
+do.call("<-",list(paste(sample_ids[1],"_calls",sep = ""),read_xlsx(calls_file,sheet=sample_ids[1])))
+```
+
+Take a moment to read the help page for `do.call()` to understand why that works.
+
+Did you notice a new variable with the desired name appear in your R Environment? Let's confirm it using `glimpse()`.
+
+```{r}
+glimpse(SRR2584863_calls)
+```
+
+Now enter code in the block below to import the remaining sheets into variables using the same naming convention.
+
+```{r}
+```
+
+At this point, the calls from each sample are stored in a nice, tidy tibble. But collectively this is not a tidy solution! For this to be tidy data, we would have one tibble which includes all of the data, which sample_id as a variable in a new column.
+
+We can use the function `add_column()` to create a new column as desired, for example:
+
+```{r}
+add_column(SRR2584863_calls,sample_id = sample_ids[1])
+```
+
+Now complete the code block below to create an 801 × 7 tidy tibble containing all of the data:
+
+```{r}
+calls <- bind_rows(...
+                   
+str(calls)
+```
+
+Finally, we have imported and tidied the variant calls.
+
+## Selecting columns and filtering rows
+
+To select columns of a data frame, use `select()`. The first argument to this function is the data frame (calls), and the subsequent arguments are the columns to keep. For example:
+
+```{r}
+select(calls, sample_id, REF, ALT)
+```
+
+Or, as you've seen in previous workshops, we can alternatively use the pipe (`%>%`):
+
+```{r}
+calls %>% select(sample_id, REF, ALT)
+```
+
+Let's pause for a moment to discuss the pipe in generality. Consider the application of a function B to a variable A; that is B(A). An equivalent representation using the pipe is A %>% B. Now imagine a second function C applied after B, as in C(B(A)). Here the equivalent representation is A %>% B %>% C. Some references suggest reading `%>%` as the word "then", and you can see how that comes about.
+
+Back to `select()`, to select all columns except certain ones, put a “-“ in front of the variable to exclude it. For example:
+
+```{r}
+select(calls, -CHROM)
+```
+
+Whereas `select()` is used to take a subset of columns, the function `filter()` is used to choose rows.
+
+```{r}
+filter(calls, sample_id == "SRR2584863")
+```
+
+Using `filter()` will keep all the rows that match the conditions supplied to the function. For example, suppose we wish to extract only those mutations where the reference genome has a purine (A or G).
+
+```{r}
+filter(calls, REF %in% c("A", "G"))
+```
+
+Even better is that `filter()`, like `select()`, allows you to combine multiple conditions. You can separate them using a "," as arguments to the function, or equivalently by using the "&" (AND) logical operator. If you need to use the | (OR) logical operator, you can specify it explicitly. So, for example, we can repeat the function of the previous code block as:
+
+```{r}
+filter(calls, REF == "A" | REF == "G")
+```
+
+Now for a challenge. Recall that transition mutations are between A and G or between C and T. Complete the code block below to extract and count the transition mutations.
+
+```{r}
+transitions <- 
+  
+n_transitions <- dim(transitions)[1]
+```
+
+## Mutate
+
+Data transformation often requires the creation of new columns based on the values in existing columns. The `mutate()` function is a convenient approach to doing so. Consider, for example, the QUAL column, which quantifies the confidence ("quality") in the ALT call based on aspects of the sequencing data. The quality score can be converted to a "probability of correctness" using the formula
+
+    PROB = 1 - 10^-(QUAL/10)
+
+We can use mutate to easily add a PROB column to the calls tibble:
+
+```{r}
+calls %>% mutate(PROB = 1 - (10^-(QUAL/10)))
+```
+
+The quality scores are generally very high, and thus the probabilities are generally very close to 1. A few, however, are not. Complete the code block below to extract the variants (rows) for which the probability is less than 0.99.
+
+```{r}
+
+```
+
+By now you will have noticed that sometimes REF is a sequence rather than a nucleotide, and likewise with ALT. That is because the variant data includes both single nucleotide polymorphisms (SNPs) as well as length polymorphisms such as insertions and deletions (collectively "indels"). We can identify the indels when the lengths of REF and ALT are not the same. We will do this using the function `nchar()` which counts the number of characters in a string.
+
+```{r}
+calls %>% mutate(INDEL = (nchar(ALT) != nchar(REF)))
+```
+
+Above you will have seen that the lowest quality variants (specifically the 17 with probability less than 0.99) are majority indels. Create a plot that compares the quality distributions of SNPs (INDEL = FALSE) and indels (INDEL = TRUE) by completing the code block below.
+
+```{r}
+
+```
+
+It certainly appears that indel calls tend to be of lower quality, which makes sense when you understand high-throughput sequencing technology
+
+## The split-apply-combine approach
+
+Often we want to split the data into groups, apply some analysis to each group, and then combine the results. This can be accomplished neatly using the complementary functions `group_by()` and `summarise()`. The function `group_by()` splits the data into groups; when the data is grouped in this way, `summarise()` can be used to collapse each group into a single-row summary. For example, if we wanted to group by sample_id and find the number of rows of data for each sample, we could do:
+
+```{r}
+calls %>% group_by(sample_id) %>% summarise(n = n())
+```
+
+Use this same approach in the code block below to count the numbers of indels and SNPs.
+
+```{r}
+
+```
+
+You can also group by multiple variables, separating them by a comma in the function call. Do so to modify your previous code so that it counts the numbers of indels and SNPs *in each of the three samples*.
+
+```{r}
+
+```
+
+Above we used a visualisation to compare the quality distributions of SNPs and indels. Let's now use  `group_by()` and `summarise()` to calculate the mean quality score for each type of polymorphism.
+
+```{r}
+calls %>% mutate(INDEL = (nchar(ALT) != nchar(REF))) %>% group_by(INDEL) %>% summarise(mean = mean(QUAL))
+```
+
+## Combining separate datasets
+
+Thus far we have considered variant calls imported from the file "ecoli_variants_calls.xlsx". Each of the 801 variant calls has additional information and metadata contained in the file "ecoli_variants_details.xlsx". The structure of this second file is similar to that of the first and includes CHROM and POS in addition to the following information (that you do not need to understand for the purposes of this exercise!):
+
+```{r table3, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+| column     | info    |
+|:-------------:|:--------:|
+| INDEL	    | indicates that the variant is an indel |
+| IDV    | maximum number of reads supporting an indel |
+| IMF    | maximum fraction of reads supporting an indel |
+| DP   | raw read depth | 
+| VDB   | variant distance bias for filtering splice-site artefacts | 
+| RPB    | Mann-Whitney U test of read position bias |
+| MQB	    | Mann-Whitney U test of mapping quality bias |
+| BQB    | Mann-Whitney U test of base quality bias |
+| MQSB    | Mann-Whitney U test of mapping quality vs strand bias |
+| SGB   | segregation based metric | 
+| MQ0F   | fraction of MQ0 reads | 
+| ICB    | inbreeding coefficient binomial test |
+| HOB   | bias in the number of HOMs number | 
+| AC   | allele count in genotypes for each ALT allele | 
+| AN    | total number of alleles in called genotypes |
+"
+cat(tabl)
+```
+
+In particular, the sample_id/POS pair uniquely identifies a variant in both files. What we would like to do is bring into one tibble all of the data from both files that is associated with each variant.
+
+To begin, we need to import the data from "ecoli_variants_details.xlsx" into a single tibble called "details". Noting that this file has a similar structure to the one you have already imported, copy your previous code into the block below and replace "calls" with "details". Take care doing this, as it is easy to make a mistake.
+
+```{r}
+details_file <- "ecoli_variants_details.xlsx"
+sample_ids <- excel_sheets(details_file)
+...
+```
+
+In this case, the two tibbles (calls and details) have conformal rows and it is straightforward to bind them together.
+
+```{r}
+variants <- bind_cols(calls,details)
+glimpse(variants)
+```
+
+Though this works, we are left with redundant columns whose redundant names required modification. Moreover, this only works because we have assumed -- correctly in this case -- that the rows were identically ordered.
+
+Let's use the function `arrange()` to sort calls by quality before using `bind_cols()`:
+
+```{r}
+calls %>% arrange(QUAL) %>% bind_cols(details)
+```
+
+This still appears to work, but let's extract the position columns using `select()` and `starts_with()` :
+
+```{r}
+calls %>% arrange(QUAL) %>% bind_cols(details) %>% select(c(starts_with("POS")))
+```
+
+That's no good. Fortunately, R allows us to properly merge tibbles using the `join` function. There are four versions of so-called mutating joins -- inner, full, left and right -- and it is worth taking a moment to read their help pages. The functions *prefix_*join(x,y) add columns from y to x, matching rows based on the keys provided. Here we will use `inner_join()`:
+
+```{r}
+inner_join(calls,details,by=c("POS","sample_id","CHROM"))
+```
+
+Here we have the same information as contained in the variants tibble, except without the redundant columns. Even better is that we no longer need to rely on the order of the rows. Watch what happens when we sort calls by quality score before joining:
+
+```{r}
+inner_join(calls %>% arrange(QUAL),details,by=c("POS","sample_id","CHROM")) %>% arrange(sample_id,POS)
+```
+
+We can confirm that these are the same using the function `all_equal()`:
+
+```{r}
+all_equal(inner_join(calls %>% arrange(QUAL),details,by=c("POS","sample_id","CHROM")) %>% arrange(sample_id,POS),inner_join(calls,details,by=c("POS","sample_id","CHROM")))
+```
+
+Before continuing, we'll redefine the tibble variants using this neater, non-redundant version:
+
+```{r}
+variants <- inner_join(calls,details,by=c("POS","sample_id","CHROM"))
+```
+
+## Reshaping data frames
+
+As we have seen in previous workshops, it can be useful to transform back and forth between the “long” tidy format and the wide format. We have elsewhere been introduced to `pivot_longer()` in the context of preparing data for ggplot. Here we'll begin with the inverse function `pivot_wider()`. The function pivot_wider() takes a tibble as the first argument as well as two additional arguments: the column name that will become the new columns and the column name that will populate the cells in the wide data.
+
+Here's a very simple application. We'll use `group_by()` and `summarise()` to record the mean and standard deviation of quality scores for the SNPs and indels in each sample.
+
+```{r}
+variants %>%
+  group_by(sample_id, CHROM, INDEL) %>%
+  summarise(mean_QUAL = mean(QUAL),sd_QUAL = sd(QUAL)) 
+```
+
+Then we will use `pivot_wider()` so that the per-sample means and standard deviations are collected in one row for SNPs and one row for indels. 
+
+```{r}
+variants %>%
+  group_by(sample_id, CHROM, INDEL) %>%
+  summarise(mean_QUAL = mean(QUAL),sd_QUAL = sd(QUAL)) %>%
+  pivot_wider(names_from = sample_id, values_from = c(mean_QUAL,sd_QUAL))
+```
+
+## Concluding exercises
+
+1) The experimental design allows us to determine the direction of mutation as REF -> ALT. Generate a 4x4 table that counts REF (A,C,G,T) -> ALT (A,C,G,T) mutations for the hypermutable strain with sample_id SRR2584866.
+
+```{r message = FALSE}
+
+```
+
+The goal is to obtain something like this, which you'll note is **strongly** biased toward transitions.
+
+```{r table4, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+| REF  |   A  |   C  |  G  |  T  |
+|:----:|:----:|:----:|:---:|:---:|
+| A    |  NA  |   8  | 139 |  4  | 
+| C    |  11  |  NA  |  6  | 176 |
+| G    |  189 |   5  | NA  | 12  |
+| T    |  5   | 117  |  3  | NA  |
+"
+cat(tabl)
+```
+
+2) What is the difference between these two lines of code?
+
+    `variants %>% filter(INDEL == TRUE) %>% select(ends_with("B"))`
+    
+    `variants %>% select(ends_with("B")) %>% filter(INDEL == TRUE)`
+    
+3) As noted in Question 1, in this experiment we can determine the direction of mutation. This allows us to further classify indels to distinguish insertions from deletions. An insertion with result in bases added to ALT relative to REF, whereas deletions will show the reverse. Use  `mutate()` to record the length difference between ALT and REF (positive = insertion, negative = deletion) and then create a plot of the results.
+
+```{r message = FALSE}
+
+```
+
+4) Use the function `slice_sample()` to randomly choose 100 rows from the calls tibble. Repeat this to select 100 rows from the details tibble. Now test out the various `join()` functions and observe the results.
+
+
+
+
