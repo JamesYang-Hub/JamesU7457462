@@ -275,7 +275,7 @@ aov1$df[1]
 ```
 
 The F value in the anova table is effectively a signal-to-noise ratio. The signal in this case is the Mean Sq for sex divided by its corresponding degrees of freedom. The noise is the Residual Mean Sq divided by its corresponding degrees of freedom. In those terms, the F value is then signal/noise. When the linear modelling assumptions are satisfied, under the null hypothesis that sex has no effect, the F value follows an F distribution on `r aov1$df[1]` and `r aov1$df[2]` degrees of freedom.
-
+#? F-value is the Mean Sq for sex(489)/the Residual Mean Sq(7.4)
 ### Equality of Approaches in the Simple Case
 
 Having mentioned this particular null hypothesis, you may be thinking about a t-test, as no effect of sex implies that the sex-specific means are the same. This is indeed equivalent:
@@ -284,8 +284,8 @@ Having mentioned this particular null hypothesis, you may be thinking about a t-
 t0 <- t.test(df %>% filter(sex=="FEMALE") %>% pull(mass),df %>% filter(sex=="MALE") %>% pull(mass),var.equal = TRUE)
 t0
 ```
-
 Observe that the p-values for both tests are the same, and that the F value is simply the square of the t statistic. Note also that the setting `var.equal = TRUE`, which is an assumption of the linear model: the variance is assumed to be the same across levels of a factor, in this case sex. Speaking of the linear model, we can also find the t statistic there, although in parallel to the F value it is referenced as the t value.#?
+
 
 ```{r}
 summary(lm1)
@@ -294,6 +294,7 @@ summary(lm1)
 We are also provided an R-squared value, which is generally interpreted as the proportion of variance explained by the model. Loosely speaking, this quantifies how well the model reduces our "wrongness". We can compute this is a couple of ways:#?
 
 ```{r}
+sum(aov1$sum_sq)
 aov1$sum_sq[1]/(sum(aov1$sum_sq))
 1 - var(lm1$residuals)/var(df$mass)
 ```
@@ -305,7 +306,7 @@ Use `ifelse()` to create a new version of df called df_numeric in which sex is r
 ```{r}
 df_numeric <- df %>% mutate(sex=ifelse(sex=="FEMALE",0,1))
 df_numeric
-corr_val <- cor(df_numeric$mass,df_numeric$sex)
+corr_val <-  cor(df_numeric$mass,df_numeric$sex)
 corr_val
 ```
 
@@ -315,6 +316,7 @@ We began in consideration of mouse mass, a response variable that we sought to p
 
 ```{r}
 tt <- matrix(c(n_mice/4,n_mice/4,n_mice/4,n_mice/4),2,2)
+tt
 colnames(tt) <- c("CONTROL","TREATMENT")
 rownames(tt) <- c("FEMALE","MALE")
 kable(tt)
@@ -384,6 +386,7 @@ ggplot(two_factor_interaction,aes(x = trt, y = mass, colour = sex)) + geom_violi
 ```
 
 Can you tell that there is an interaction? What about the plot gives it away?#?
+the obesity drug has higher effect on female, it is obvious that the plot shows the difference between two intercepts of the female is bigger than male's.
 
 Let's confirm with another call to `lm()`:
 
@@ -407,7 +410,7 @@ ggplot(two_factor_interaction,aes(x = interaction(sex,trt), y = mass, colour = i
 Compare that to what happens when the data is grouped together!
 
 ```{r}
-ggplot(two_factor_interaction,aes(x = factor(1), y = mass)) + geom_violin() + geom_point(size=2,alpha=0.5) + stat_summary(fun = "mean",
+ggplot(two_factor_interaction,aes(x = factor(2), y = mass)) + geom_violin() + geom_point(size=2,alpha=0.5) + stat_summary(fun = "mean",
                geom = "crossbar", 
                width = 0.5) + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),legend.position = "none") 
 ```
@@ -440,6 +443,7 @@ age_sex_df <- tibble(mouse_id = 1:n_mice, age = rpois(n_mice,20), sex = c(rep("F
 age_sex_df
 ```
 
+
 Let's take a look at this using our old friend `geom_smooth()`:
 
 ```{r}
@@ -461,8 +465,9 @@ Let's try to make sense on the coefficients. The intercept corresponds to the me
 
 The function `rpois()` was used to generate random ages for the mice. If this is unfamiliar, check the help page to see what this function is doing. Would it make much of a difference if we had chosen another approach to assign ages to the mice? You can try it out in the code block below:
 
+
 ```{r}
-age_sex_df_test <- tibble(mouse_id = 1:n_mice, age = <<TRY SOMETHING HERE>>, sex = c(rep("FEMALE",n_mice/2),rep("MALE",n_mice/2))) %>% mutate(mass = ifelse(sex == "FEMALE",intercept+age*female_slope,intercept+age*male_slope)) %>% mutate(mass = mass + rnorm(n_mice,0,noise))
+age_sex_df_test <- tibble(mouse_id = 1:n_mice, age = sample(20,40,replace=TRUE), sex = c(rep("FEMALE",n_mice/2),rep("MALE",n_mice/2))) %>% mutate(mass = ifelse(sex == "FEMALE",intercept+age*female_slope,intercept+age*male_slope)) %>% mutate(mass = mass + rnorm(n_mice,0,noise))
 lm_age_sex_test <- lm(mass ~ age*sex, data = age_sex_df_test)
 summary(lm_age_sex_test)
 ```
