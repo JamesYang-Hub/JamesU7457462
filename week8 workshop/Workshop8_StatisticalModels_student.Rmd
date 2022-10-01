@@ -114,9 +114,9 @@ variance_mass
 
 ### CHECK YOUR UNDERSTANDING
 
-Variance is a key concept in probability and statistics, and it is often used to quantify noise or uncertainty. Most of time it is a useful measure, but like any summary it has its drawbacks. Consider the distributions below labelled a (red) and b (blue). Which one has the greater variance? For which is variance a more useful summary? #? Why?
+Variance is a key concept in probability and statistics, and it is often used to quantify noise or uncertainty. Most of time it is a useful measure, but like any summary it has its drawbacks. Consider the distributions below labelled a (red) and b (blue). Which one has the greater variance? For which is variance a more useful summary?
 
-blue one has greater variance; blue one, 
+blue one has greater variance; blue one,  #? Why?
 ```{r}
 tib <- tibble(a = c(rep(-1,99),99),b = rnorm(100,0,1)) %>% mutate(b = 10*(b-mean(b))/sd(b))
 tib
@@ -303,13 +303,9 @@ aov1$sum_sq[1]/(sum(aov1$sum_sq))
 Use `ifelse()` to create a new version of df called df_numeric in which sex is recoded as a number. Use 0 for FEMALE and 1 for MALE. Then compute the correlation between mass and sex. How does this value relate to the values reported in `summary(lm1)`?
 
 ```{r}
-
-sex_n<-ifelse(df$sex=="FEMALE",0,1)
-
-df_numeric <- df %>% add_column(sex_n)
-
+df_numeric <- df %>% mutate(sex=ifelse(sex=="FEMALE",0,1))
 df_numeric
-corr_val <- cor(df_numeric$mass,df_numeric$sex_n)
+corr_val <- cor(df_numeric$mass,df_numeric$sex)
 corr_val
 ```
 
