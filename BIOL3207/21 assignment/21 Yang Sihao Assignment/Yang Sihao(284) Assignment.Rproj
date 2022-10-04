@@ -1,0 +1,56 @@
+---
+title: "Statistical Inference in Biology Assignment 1"
+author: "201900700284 Yang Sihao"
+date: "2021/3/21"
+output: html_document
+---
+
+#the Null and alternative hypotheses
+H0<-milk caps are Poisson distributed around the forest
+H1<-milk caps are NOT Poisson distributed around the forest
+
+#I'm going to use Poisson Distribution and χ2 Statistic. Poisson distribution is used to calculate the probability of an event occurring over a certain interval. The interval can be one of time, area, volume or distance. and χ2 Statistic could evaluate the distance between the two distributions.
+
+
+```{r}
+milkcap.df <- read.csv("milkcap.csv.", stringsAsFactors = T)
+milkcap.df
+```
+
+```{r}
+milkcaps.mean<-weighted.mean(milkcap.df$specimens,milkcap.df$count)
+```
+
+λ=μ
+
+```{r}
+milkcap.range<-0:4
+p<-dpois(milkcap.range,lambda = milkcaps.mean)
+expected<-p*sum(milkcap.df$count)
+expected
+```
+
+```{r}
+plot(milkcap.df$specimens, milkcap.df$count, 
+     type = "h", 
+     lwd = 3, 
+     col = "steelblue",
+     xlab="specimens", 
+     ylab="count")
+lines(milkcap.df$specimens, expected,     lwd = 3, 
+     col = "tomato4",)
+```
+
+
+```{r}
+milkcap.df$count_expected<-round(expected,2)
+milkcap.df
+```
+
+```{r}
+chisq<-chisq.test(milkcap.df$count,  p=milkcap.df$count_expected, rescale.p = T)
+chisq
+```
+
+
+#Given the p-value<0.05, we can accept H0. the data provide sufficient evidence to conclude that the milk caps are fitted Poisson distrbution.
