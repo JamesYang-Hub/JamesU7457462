@@ -1,0 +1,186 @@
+---
+title: "EDA biology assignment02"
+author: "201900700284 Yang Sihao"
+date: "2021/5/11"
+output: html_document
+---
+
+# Load the data
+```{r}
+data <- read.csv("seeds.csv", stringsAsFactors = T)
+data
+```
+
+ load the samples
+```{r}
+samples <- read.csv("sample.csv", stringsAsFactors = T)
+samples
+```
+
+```{r}
+str(samples)
+```
+
+```{r}
+samples$pressure<-factor(samples$pressure,c("0","-0.5","-1"))
+str(samples)
+```
+
+```{r}
+seeds<-merge(samples,data)
+seeds
+```
+
+remove the unnecessary data.
+```{r}
+rm(data, samples)
+```
+
+# Calculate the Mean Time to Germination(MTG)
+```{r}
+seeds$interval_3  <- seeds$total_3
+seeds$interval_5  <- seeds$total_5  - seeds$total_3
+seeds$interval_7  <- seeds$total_7  - seeds$total_5
+seeds$interval_10 <- seeds$total_10 - seeds$total_7
+seeds$interval_12 <- seeds$total_12 - seeds$total_10
+seeds$interval_14 <- seeds$total_14 - seeds$total_12
+
+seeds
+```
+
+Create a new function to calculate the weighted mean using the time periods in the experiment.
+```{r}
+calcMTG <- function(weights){
+  weighted.mean(c(3, 5, 7, 10, 12, 14), weights)
+}
+```
+
+```{r}
+calcMTG(c(0, 0, 0, 0, 1, 1))
+```
+
+```{r}
+calcMTG(c(1, 0, 1, 0, 0, 2))
+```
+
+```{r}
+mtg <- apply(seeds[, c("interval_3", "interval_5", "interval_7", "interval_10", "interval_12", "interval_14")], 1, calcMTG)
+mtg
+```
+
+Add the calculated MTG values as a new column to the data.frame.
+```{r}
+seeds$MTG <- round(mtg, 2)
+rm(mtg)
+
+seeds
+```
+
+
+# Calculate the Germination Fraction (GF)
+```{r}
+seeds$GF <- seeds$total_14 / 5
+seeds
+```
+
+# Perform ANOVA on the MTG 
+ANOVA model 
+```{r}
+seeds.mtg.aov <- aov(MTG ~ species * pressure + shelf, data = seeds)
+```
+
+ANOVA table
+```{r}
+summary(seeds.mtg.aov)
+```
+
+Diagnostic plots:
+```{r}
+par(mfrow = c(2, 2))
+plot(seeds.mtg.aov)
+```
+
+```{r}
+par(mfrow=c(1,1))
+```
+
+Means in the groups:
+```{r}
+seeds.mtg.means <- model.tables(seeds.mtg.aov, "means")
+seeds.mtg.means$tables$`species:pressure`
+```
+
+TukeyHSD pairwise tests:
+```{r}
+seeds.mtg.hsd <- TukeyHSD(seeds.mtg.aov)
+
+par(mar = c(5, 12, 2, 2))
+par(mfrow = c(2, 2))
+plot(seeds.mtg.hsd, las = 1, col = "red")
+```
+
+```{r}
+par(mfrow = c(1, 1))
+```
+
+Interaction plot:
+```{r}
+par(mar = c(5, 5, 2, 2))
+interaction.plot(seeds$pressure, seeds$species, seeds$MTG, col = c("darkolivegreen4", "goldenrod3"), type = "b", lty = 1, lwd = 3, pch = c(20, 20), trace.label = "species", xlab = "pressure", ylab = "MTG")
+```
+
+# Graphical presnetation of MTG
+```{r}
+par(mar = c(10, 5, 2, 2))
+boxplot(MTG ~ species + pressure, data = seeds, las = 2, col = c("darkolivegreen", "gold4", "darkolivegreen4", "goldenrod3", "darkolivegreen2", "gold"), frame = F, outline = F, sep = ": ", xlab = "")
+stripchart(MTG ~ species + pressure, data = seeds, vertical = T, method = "jitter", jitter = 0.15, pch = 20, col = "darkgreen", add = T)
+```
+
+# Perform ANOVA on the GF
+ANOVA model
+```{r}
+seeds.mtg.aov <- aov(GF ~ species * pressure + shelf, data = seeds)
+```
+
+ANOVA table
+```{r}
+summary(seeds.mtg.aov)
+```
+
+Diagnostic plots:
+```{r}
+par(mfrow = c(2, 2))
+plot(seeds.mtg.aov)
+```
+
+```{r}
+par(mfrow = c(1, 1))
+```
+
+Means in the groups:
+```{r}
+seeds.mtg.means <- model.tables(seeds.mtg.aov, "means")
+seeds.mtg.means$tables$`species:pressure`
+```
+
+TukeyHSD pairwise tests:
+```{r}
+seeds.mtg.hsd <- TukeyHSD(seeds.mtg.aov)
+
+par(mar = c(5, 12, 2, 2))
+par(mfrow = c(2, 2))
+plot(seeds.mtg.hsd, las = 1, col = "red")
+```
+
+```{r}
+par(mar = c(5, 5, 2, 2))
+interaction.plot(seeds$pressure, seeds$species, seeds$GF, col = c("darkolivegreen4", "goldenrod3"), type = "b", lty = 1, lwd = 3, pch = c(20, 20), trace.label = "species", xlab = "pressure", ylab = "GF")
+```
+
+# Graphical presentation of GF
+```{r}
+par(mar = c(10, 5, 2, 2))
+boxplot(GF ~ species + pressure, data = seeds, las = 2, col = c("darkolivegreen", "gold4", "darkolivegreen4", "goldenrod3", "darkolivegreen2", "gold"), frame = F, outline = F, sep = ": ", xlab = "")
+stripchart(GF ~ species + pressure, data = seeds, vertical = T, method = "jitter", jitter = 0.15, pch = 20, col = "darkgreen", add = T)
+```
+
