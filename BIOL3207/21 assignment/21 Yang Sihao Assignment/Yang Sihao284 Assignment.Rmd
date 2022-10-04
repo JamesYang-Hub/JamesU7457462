@@ -1,0 +1,99 @@
+---
+title: "Statistical Inference in Biology Assignment 1"
+author: "201900700284 Yang Sihao"
+date: "2021/3/21"
+output: html_document
+---
+# 1、The Null and alternative hypotheses.
+
+H0<-milk caps are Poisson distributed around the forest，
+H1<-milk caps are NOT Poisson distributed around the forest
+
+
+# 2、The model and statistical test.
+
+Poisson Distribution, Poisson distribution is used to calculate the probability of an event occurring over a certain interval. 
+
+χ2 Statistic, χ2 Statistic could evaluate the distance between the two distributions.
+
+
+# 3、Generate the expected values (counts) based on a fitted Null model.
+
+Import the milkcap.csv
+```{r}
+milkcap.df <- read.csv("milkcap.csv.", stringsAsFactors = T)
+milkcap.df
+```
+
+
+Calculate the weighted average of specimens and count
+```{r}
+milkcaps.mean<-weighted.mean(milkcap.df$specimens,milkcap.df$count)
+```
+
+
+Calculate expected count of extinctions λ.
+
+"We do not know the true value of the expected count, the λ. To know it, we would need to collect and analyze all the milkcaps data on the Earth. It is of course not feasible (similarly as measuring all the wood ducks in the world). We will need to estimate λ from the sample μ:
+λ=μ"     (PS:this paragraph is quoted from the solution4 of workshop4)
+$$
+\mu=\lambda
+$$
+
+
+Calculate Poisson distribution using the expected count λ.
+
+"Create a vector variable with the sequence of extinction between 0 and 4:milkcap.range"
+"Calculate probabilities from the Poisson distribution, use milkcaps.mean as the parameter lambda"
+"We need to calculate the expected frequencies from the probabilities knowing that the marginal sum of expected must be equal do the marginal sum of observed"
+(PS:these paragraphs are quoted from the solution6 of workshop4)
+```{r}
+milkcap.range<-0:4
+p<-dpois(milkcap.range,lambda = milkcaps.mean)
+expected<-p*sum(milkcap.df$count)
+expected
+```
+
+
+# 4、Make a plot or plots presenting the observed and the expected count.
+
+Do the barplot to present the observed frequencies. Then, use the lines() function to add a line of expected count from the Poisson distribution.(PS: the string of code below is quoted from the solution7 of workshop4 and modfied)
+```{r}
+plot(milkcap.df$specimens, milkcap.df$count, 
+     type = "h", 
+     lwd = 3, 
+     col = "steelblue",
+     xlab="specimens", 
+     ylab="count")
+lines(milkcap.df$specimens, expected,     lwd = 3, 
+     col = "tomato4",)
+```
+
+
+# 5、Perform the statistical test observing its assumptions.
+
+Add the expected count to the milkcaps dataframe as a new column count_expected.
+```{r}
+milkcap.df$count_expected<-round(expected,2)
+milkcap.df
+```
+
+Calculate the χ2 statistic and find the probability of H0, the p-value.
+```{r}
+chisq<-chisq.test(milkcap.df$count,p=milkcap.df$count_expected,rescale.p = T)
+chisq
+```
+
+# 6、Conclusion:
+
+This problem is to determine if milk caps are randomly distributed around the forest.
+
+I use the expected of Poisson distribution and the observed to calculate the χ2 statistic and the probability of H0, the p-value to judge if the milk caps are fitted Poisson distribution.
+
+P-value equals 2.2e-16 and Represents the level of support for the null hypothesis is another method used to determine whether the null hypothesis should be rejected.
+
+It's easy to see the p-value less than α=0.05, the data provide sufficient evidence to conclude that the milk caps are fitted Poisson distribution.
+
+We can confirm that the milk caps are not randomly distributed. 
+
+The research is not perfect because the number of sample is not enough.
