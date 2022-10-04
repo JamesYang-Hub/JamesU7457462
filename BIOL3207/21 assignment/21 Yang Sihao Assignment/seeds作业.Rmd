@@ -1,0 +1,14 @@
+---
+title: "Untitled"
+author: "201900700284 Yang Sihao"
+date: "2021/5/11"
+output: html_document
+---
+
+```{r}
+data <- read.csv("seeds.csv", stringsAsFactors = T)
+data
+```
+
+
+
