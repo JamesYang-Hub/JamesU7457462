@@ -605,7 +605,7 @@ Now, lets start with `lme4` and fit cage as a random effect:
 
 ```{r}
 # Lets fit a mixed effects model. We call this a mixed effects model because we are estimated both fixed and random effects.
-model_mixed_lme <- lmer(change_in_mass ~ age*sex*trt + (1|cage), data = cages_paired_age_sex_trt_df)
+model_mixed_lme <- lmer(change_in_mass ~ age*sex*trt + (1|cage), data = cages_paired_age_sex_trt_df)#？(1|cage) means cage doesn't affect the coefficient (slope) of change_in_mass is a random variance
 summary(model_mixed_lme)
 ```
 

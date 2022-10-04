@@ -1,0 +1,88 @@
+---
+title: "U7457462 Sihao Yang"
+output: html_document
+date: "2022-10-01"
+---
+# Introduction of Data
+The data from a fictional ecological study. The research was conducted over a ten year period (2011-2020) across five widely dispersed field sites. Individual animals from two sister species (A fictus and A mendacium) were observed, and data was recorded on their size (weight and height) and range. 
+
+1) The roaming range of the animal                      (in square km)
+2) The weight of the animal                             (in kg)
+3) The height of the animal                             (in cm)
+4) The species of the animal                            (A fictus or A mendacium)
+5) The year that the measurements were taken            (2011-2020)
+
+## Preliminaries
+
+### Libraries and Packages
+
+Load in the corresponding libraries, tidyverse as well as readxl.
+```{r echo=FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+### Import CSV files
+The data is in an Excel file (“BIOL3207_Assignment1_DataFile.xlsx”) in which each of the five field sites is a separate sheet. Each row represents measurements from a single animal.
+```{r echo=FALSE}
+meta_data_file1 <- "data/BIOL3207_Assignment1_DataFile.xlsx"
+meta_data_file <- read_xlsx(meta_data_file1,skip=7)#skip the first seven lines to read the data table
+meta_data_file
+```
+
+### Get the names of the sheets.
+```{r}
+sample_ids <- excel_sheets(meta_data_file1)
+sample_ids #"Field Site 1" "Field Site 2" "Field Site 3" "Field Site 4" "Field Site 5"
+```
+### Assign the spreadsheet into different variables
+```{r}
+string <- c("Field Site 1","Field_Site 2","Field Site 3","Field Site 4","Field Site 5")
+string <- trimws(gsub("\\s+", "_", string))# the elements in string:"Field_Site_1" "Field_Site_2" "Field_Site_3" "Field_Site_4" "Field_Site_5"
+
+# Import the remaining sheets into variables
+do.call("<-",list(paste(string[1],"_assign",sep = ""),read_xlsx(meta_data_file1,sheet=sample_ids[1],skip=7)))
+# Loop
+for (i in c(2,3,4,5)) {
+  
+  do.call("<-",list(paste(string[i],"_assign",sep = ""),read_xlsx(meta_data_file1,sheet=sample_ids[i])))
+}
+
+```
+
+```{r}
+
+```
+
+###Create a new column as desired
+```{r}
+string2 <- str_c(string,"_assign")# create a list of sheet names
+string2
+```
+```{r}
+#add column to all data
+Field_Site_1_assign <- add_column(Field_Site_1_assign,sampl_id=string[1])
+Field_Site_2_assign <- add_column(Field_Site_2_assign,sampl_id=string[2])
+Field_Site_3_assign <- add_column(Field_Site_3_assign,sampl_id=string[3])
+Field_Site_4_assign <- add_column(Field_Site_4_assign,sampl_id=string[4])
+Field_Site_5_assign <- add_column(Field_Site_5_assign,sampl_id=string[5])
+```
+### Create tidy tibble containing all of the data
+```{r}
+assign <- bind_rows(Field_Site_1_assign,Field_Site_2_assign,Field_Site_3_assign,Field_Site_4_assign,Field_Site_5_assign)# combine all of data
+names(assign) <- c('Range','Weight','Height','Species','Year','Sample_id') # rename the column names
+assign
+```
+
+## Selecting columns and filtering rows
+
+```{r}
+assign <- assign %>% na.omit() # get rid of all NA entries/ Omit all unnecessary entries
+```
+
+
+
+
+
+
+ 
