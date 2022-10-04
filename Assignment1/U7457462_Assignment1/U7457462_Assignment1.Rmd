@@ -78,11 +78,30 @@ str(assign)
 
 ```{r}
 assign <- assign %>% na.omit() # get rid of all NA entries/ Omit all unnecessary entries
+assign <- assign %>% group_by(Sample_id,Year,Species)# group by Species,Sample_id and Year
+
+# Find out the mistake of spelling  
+assign$Species %>% unique() # "A fictus"    "A mendacium" "A Mendacium"
+assign$Year %>% unique() # 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2217
+
+assign <- assign %>% mutate(Species = stringr::str_replace(Species,"A Mendacium","A mendacium"),Year = stringr::str_replace(Year,"2217","2017"))
+
+# check the motified spelling
+assign$Year %>% unique() #"2011" "2012" "2013" "2014" "2015" "2016" "2017" "2018" "2019" "2020"
+assign$Species %>% unique() #"A fictus"    "A mendacium"
 ```
 
 ### Writing of the curated data tibble to a csv file
 ```{r}
-write.xlsx(assign, file = "data/u7457462_BIOL3207_Assignment1_DataFile.xlsx")
+library(writexl)
+writexl::write_xlsx(assign, path  = "data/u7457462_BIOL3207_Assignment1_DataFile.xlsx") # export the excel file
+```
+
+### Create the ggplot of hegiht and weight between ***A fictus***  and ***A mendacium***
+```{r}
+ggplot(assign,aes(x=Weight))+geom_density(aes(col= Species))
+ggplot(assign,aes(x=Height))+geom_density(aes(col= Species))
+
 ```
 
 
