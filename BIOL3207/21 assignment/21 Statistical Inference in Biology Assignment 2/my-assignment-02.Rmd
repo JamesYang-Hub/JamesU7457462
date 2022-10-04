@@ -1,0 +1,77 @@
+---
+title: "Statistical Inference in Biology Assignment 2"
+author: "201900700284 Yang Sihao"
+date: "2021/3/29"
+output: html_document
+---
+
+# 1、The Null and alternative hypotheses
+Null hypotheses: time required to drink a glass of beer is not related to the shape of the glass
+Alternative hypotheses: time required to drink a glass of beer is related to the shape of the glass
+
+# 2、Sample data
+  1、The data is continuous because the data can take any value within a certain interval.
+  2、Load the data
+```{r}
+beer.df <- read.csv("beer.csv", stringsAsFactors = T)
+beer.df
+```
+
+  3、Calculate the mean、minimum、maximum
+```{r}
+levels(beer.df$glassShape)
+nlevels(beer.df$glassShape)
+```
+
+```{r}
+beer.mean<-mean(beer.df$drinkingTime)
+```
+The mean is approximately 11.45.
+
+```{r}
+min(beer.df$drinkingTime)
+max(beer.df$drinkingTime)
+```
+The minimum is 2.1 , the maximum is 23.54.
+
+```{r}
+length(beer.df$drinkingTime)
+```
+
+
+```{r}
+straight<-beer.df[beer.df$glassShape=="straight","drinkingTime"]
+curved<-beer.df[beer.df$glassShape=="curved","drinkingTime"]
+```
+There are 19 observations conducted, 10 for straight, 9 for curved.
+The measure was that 19 participants drink the glass of beer in minutes, so the sample size is 19.
+
+
+# 3、Make a box plot presenting the data.
+```{r}
+boxplot(straight,curved,col = c("tomato4","firebrick"),names = c("straight","curved"))
+```
+The shape of glasses could impact the time of drinking from this box plot.
+
+# 4、The statistical test 
+  I'm going to use the t-test because the t-test is mainly used for normal distributions where the sample size is small and the population standard deviation σ is unknown.
+This problem is to test whether the two samples are significant enough to determine the relationship between the drinking time and the shape of the glass. I will use the t.test() function to perform the test.
+  
+# 5、Perform the test.
+```{r}
+beer.t<-t.test(straight,curved,alternative = "two.sided",var.equal = T)
+beer.t
+```
+Given the observations there is a statistically significant difference between means of the two samples. The p-value is 0.003425 is lower than the level of significance, the α (0.05), so reject the Null hypotheses and accept the Alternative hypotheses, time required to drink a glass of beer is related to the shape of the glass.
+
+# 6、Results of the test
+The calculated t-statistic is 3.3977.
+The Calculated p-values is 0.003425.
+The 95 percent confidence interval is from 2.774455 to 11.864878.
+
+# 7、Conclusion
+I initially created two vectors of the curved and straight, I performed a box plot of the two groups to see the direction of the change. I then analyzed the difference between the curved and straight using a two sample t-test. 
+The statistical test: Two sided t-test confirmed provided statistical support for the difference between  time required to drink a glass of beer between the curved and the straight glasses. 
+The calculated p-value < 0.005 is lesser than the significance level α=0.05 providing a strong statistical support for rejection of the Null hypothesis. 
+Given the data we can reject the Null hypothesis and accept the alternative hypothesis: time required to drink a glass of beer is related to the shape of the glass. 
+I'd like to point out that the observation is too small to get an good result, to avoid this issue we can measure more than 19 participants.
