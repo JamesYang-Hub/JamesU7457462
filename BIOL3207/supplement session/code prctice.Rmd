@@ -1,0 +1,227 @@
+---
+title: "data"
+author: "201900700284 Yang Sihao"
+date: '2022-08-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 
+
+
+
+```{r loaddata, echo=TRUE,eval=TRUE}
+## load the data set from 
+library(readr)
+iris <- read_csv("data/iris.csv")
+View(iris)
+
+## find useful information
+
+iris[1:6,"Species"]
+
+```
+
+```{r}
+str(iris)
+
+```
+```{r}
+library("installr")
+installr::updater()
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+
+# FUnctions- filter() and the other function is called select()
+species<- filter(iris,Species=="setosa")
+
+
+species1<-iris%>%summarise(m=mean(Sepal.Length))
+species1
+
+
+```
+
+
+```{r}
+
+dplyr::filter(iris,is.na(Species))
+dplyr::filter(iris,is.na(Petal.Length))
+dplyr::filter(iris,is.na())
+```
+
+
+```{r}
+a<-iris$complete.cases(iris)
+
+```
+
+## filter the dots larger than 58 and shorten the lenght(x-axis) 10 times less
+```{r}
+b<-iris%>% 
+  mutate(Petal.Length=if_else(Petal.Length==58,Petal.Length/10,Petal.Length))
+
+
+```
+
+
+```{r}
+ggplot(b,aes(x=Sepal.Length,y=Petal.Width))+geom_point(aes(col=Species))+labs(x="Sepal.width",y="Petal.Length")
+```
+
+
+
+
+
+```{r}
+iris$Species
+head(iris)
+```
+```{r}
+
+```
+
+```{r}
+iris[1:6,"Species"]
+```
+```{r}
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r}
+#
+# Needleman-Wunch algorithm for Nucleic Acid alphabet {A, C, G, T}
+#
+#	Version 3	19/07/10
+#	Version 4	28/07/10 Fixed bug: arrows in first row and column missing from path matrix
+#	Version 5	22/07/11 Minor formatting changes
+#	Version 6	22/07/15 Comments added
+#	Version 7	24/07/15 Added timing
+#	Version 8	04/07/16 Replaced plot of F-matrix with a nicer plot in a plot window
+#	Version 9	21/07/16 Renamed sequences X and Y to agree with notes
+#
+#
+#	Set plotting <- TRUE to plot, or FALSE not to plot the F-matrix
+#		(FALSE recommended if sequence lengths are > 30)
+#
+	plotting <- TRUE
+#
+#	Input sequences are encoded 1, 2, 3, 4 for A, C, G, T
+#
+#	Either use the example in the notes
+#
+	X <- c(3, 1, 1, 4, 2, 4)
+	Y <- c(2, 1, 4, 4)
+#
+#	Or generate two random sequences
+#
+	 # X <- sample(1:4, 20, replace = TRUE)
+	 # Y <- sample(1:4, 20, replace = TRUE)
+#
+#	measure start and end times 
+#
+	tStart <- proc.time()
+#
+	NuclAcids <- c("A", "C", "G", "T")
+#
+	seqX <- NuclAcids[X]
+	seqY <- NuclAcids[Y]
+#
+	nX <- length(X)
+	nY <- length(Y)
+#
+#	Set up scoring matrix
+#
+	d <- 2  # gap penalty
+	s <- array(c(1,-1,-1,-1,
+	            -1, 1,-1,-1, 
+	            -1,-1, 1,-1, 
+	            -1,-1,-1, 1), dim=c(4, 4))
+#
+#	Set up the matrix F and pointers for traceback
+# Caution: the indices of F[i, j] differ by 1 from the convention in the lecture notes
+#
+#	Initialisation
+# 
+	Fmatrix <- array(dim=c(nX + 1, nY + 1))
+	Fmatrix[,1] <- 0
+	Fmatrix[1,] <- 0	
+	pointers <- array(rep(FALSE,nX*nY), dim=c(nX, nY, 3))
+	Fmatrix
+#
+#	Recursion
+#
+	for(i in 1:nX){
+		for(j in 1:nY){
+			Fmatrix[i + 1, j + 1] <- max(Fmatrix[i, j] + s[X[i], Y[j]], 
+									  Fmatrix[i, j + 1] - d, 
+									  Fmatrix[i + 1, j] - d)
+			pointers[i, j, ] <-  Fmatrix[i + 1, j + 1] == c(Fmatrix[i, j] + s[X[i], Y[j]], 
+ 									  Fmatrix[i, j + 1] - d, 
+ 									  Fmatrix[i + 1, j] - d)
+			}
+		}
+#
+	tEnd <- proc.time()
+	cat("\n Time taken =", (tEnd - tStart)[1], "seconds\n")
+#
+#	(Traceback not included in this program)
+#
+#	Draw a matrix showing paths 
+#
+	if(plotting){
+#
+		plot.new()
+		plot.window(xlim=c(0,nY), ylim=c(0,nX))
+		text(rep(0:nY, times=(nX + 1)), rep(nX:0, each=(nY + 1)), labels=paste(t(Fmatrix)))
+		mtext(c("-", seqY), at = 0:nY, side=3, line=2, col="blue", cex=1.5)
+		mtext(c("-", seqX), at = nX:0, side=2, line=2, col="blue", cex=1.5, las=2)
+#
+#	Arrows along first row and column
+#
+		arrows(x0=0, x1=0, y0=(nX:1) - 1 + 0.2, y1=(nX:1) - 1 + 0.8, length=0.1)
+		arrows(x0=(1:nY)-0.2, x1=(1:nY)-0.8, y0=nX, y1=nX, length=0.1)
+#
+#	Arrows in body of diagram
+#
+		xFrom <- rep(1:nY, times=nX)
+		yFrom <- rep((nX:1) - 1, each=nY)
+#
+		xDiagArrows <- xFrom[t(pointers[,,1])]
+		yDiagArrows <- yFrom[t(pointers[,,1])]
+		arrows(x0=xDiagArrows-0.2, x1=xDiagArrows-0.8, y0=yDiagArrows+0.2, y1=yDiagArrows+0.8, length=0.1)
+#
+		xUpArrows <- xFrom[t(pointers[,,2])]
+		yUpArrows <- yFrom[t(pointers[,,2])]
+		arrows(x0=xUpArrows, x1=xUpArrows, y0=yUpArrows + 0.2, y1=yUpArrows + 0.8, length=0.1)
+#
+		xLeftArrows <- xFrom[t(pointers[,,3])]
+		yLeftArrows <- yFrom[t(pointers[,,3])]
+		arrows(x0=xLeftArrows-0.2, x1=xLeftArrows-0.8, y0=yLeftArrows, y1=yLeftArrows, length=0.1)
+#
+	}
+#
+```
+
