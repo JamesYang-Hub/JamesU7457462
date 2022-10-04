@@ -71,7 +71,7 @@ Field_Site_5_assign <- add_column(Field_Site_5_assign,sampl_id=string[5])
 ```{r}
 assign <- bind_rows(Field_Site_1_assign,Field_Site_2_assign,Field_Site_3_assign,Field_Site_4_assign,Field_Site_5_assign)# combine all of data
 names(assign) <- c('Range','Weight','Height','Species','Year','Sample_id') # rename the column names
-assign
+str(assign)
 ```
 
 ## Selecting columns and filtering rows
@@ -80,6 +80,10 @@ assign
 assign <- assign %>% na.omit() # get rid of all NA entries/ Omit all unnecessary entries
 ```
 
+### Writing of the curated data tibble to a csv file
+```{r}
+write.xlsx(assign, file = "data/u7457462_BIOL3207_Assignment1_DataFile.xlsx")
+```
 
 
 
