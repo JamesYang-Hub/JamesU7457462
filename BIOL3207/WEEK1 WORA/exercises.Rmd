@@ -1,0 +1,146 @@
+---
+title: "Untitled"
+author: "201900700284 Yang Sihao"
+date: '2022-07-28'
+output: html_document
+---
+
+
+
+
+```{r}
+
+
+library(adabag)
+```
+```{r}
+install.packages("dslabs")
+pacman::p_load(tidyverse)
+```
+
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+library(dslabs)
+data(murders)
+```
+
+```{r}
+class(murders$region)
+levels(murders$region)
+length(murders$region)
+table(murders$region)
+```
+
+
+```{r}
+
+class(murders)
+levels(murders)
+names(murders)
+```
+
+```{r}
+head(murders) 
+```
+
+```{r}
+murders$abb
+```
+```{r}
+murder_rate<- murders$total/murders$population*100000
+murder_rate
+```
+
+
+# compute per 100,000 murder rate for each state
+
+# the min murder rate
+```{r}
+ind<-which.min(murder_rate)
+murders$state[ind]
+```
+# entries low than 1
+```{r}
+low<-murder_rate<1
+murders$state[low]
+murder_rate[low]
+
+str(murders)
+levels(murders$region)
+murders[murders$region == "West" | murders$region == "Northeast",]
+```
+# indices of murder_rate <1
+```{r}
+
+dice<- which(murder_rate<1)
+dices<-murder_rate[dice]
+country<-murders$state[dice]
+names(country)<-dices
+country
+
+```
+
+```{r}
+dice
+```
+
+# state in theNortheast with murder_rate <1 
+```{r}
+murder_rate
+Neast<-which(murder_rate<1,murders$region=="Northeast")
+murders$state[Neast]
+Neast
+```
+```{r}
+seq(1,100,2)
+```
+
+# p-value simulator
+
+```{r}
+n_labs<- 100
+n_trt<- 50
+n_ctl<- 50
+
+effect_trt<- rnorm(n_trt,.5,1)
+effect_ctl<- rnorm(n_trt,.5,1)
+t.test(effect_trt,effect_ctl)$p.value
+```
+
+```{r}
+
+
+pval_dist<- rep(0,n_labs)
+for (lab in 1:n_labs) {
+n_labs<- 100
+n_trt<- 50
+n_ctl<- 50
+
+effect_trt<- rnorm(n_trt,.8,1)
+effect_ctl<- rnorm(n_trt,.1,1)
+pval_dist[lab] <- t.test(effect_trt,effect_ctl)$p.value
+}
+hist(pval_dist)
+```
+```{r}
+effect_trt<- rnorm(n_trt,.5,1)
+
+effect_trt
+```
+
+```{r}
+a<-(0.95)**20
+a
+```
+
+```{r}
+Sys.setenv(LANG="en")
+
+```
+
+
