@@ -1,0 +1,344 @@
+---
+title: "Data Visualisation"
+author: "<SIHAO YANG U7457462>"
+date: "19 August 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Data setup
+
+This visualisation exercise will use data on Tasmanian devil facial cancers from the following paper:
+
+Ruiz-Aravena, M., Jones, M. E., Carver, S., Estay, S., Espejo, C., Storfer, A., & Hamede, R. K. (2018). Sex bias in ability to cope with cancer: Tasmanian devils and facial tumour disease. Proceedings of the Royal Society B, 285(1891), 20182239.
+
+
+```{r}
+library(tidyverse)
+cancer_df <- read_csv('./data/Ruiz_Aravena_et_al_raw_data.csv')
+
+str(cancer_df)
+```
+
+
+### ggplot2
+
+Let us start by making a scatterplot of two variables.
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = t.bodyratio)) +
+  geom_point()
+```
+
+A plot always needs (at least) these three components. 
+1. data (in the form of a tibble or data frame);
+2. a mapping -- the aes() function, which stands for aesthetic, that tells R how to map data coordinates to the plot; and,
+3. a geometry (which always starts with geom_) which determines the shape of the plot.
+
+The y-axis is rather cluttered, as most of the values are small. We can de-clutter the plot by using a log scale. Copy the code above into the block below and add scale_y_log10().
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = t.bodyratio)) +
+  geom_point()+scale_y_log10()
+```
+
+This is how ggplot works -- you start with the first few pieces that you need, and add extra functions to do anything you want around display, etc..
+
+These variables are highly correlated, which makes sense (they both relate to tumor size) -- we could instead consider body condition.
+
+### Exercise
+
+Write code in the block below to plot BCestimate on the y axis and log_T_vol on the x axis.
+
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate)) +
+  geom_point()
+```
+
+An important tool is saving your plots. Create a 'figs' folder. Save your most recent plot with ggsave() (you can do this in different formats). Note that width and height are in inches. (If this causes an error, then you haven't made a figs folder! If you would like to try this in R, check out the command "dir.create".)
+
+```{r eval=FALSE}
+ggsave('./figs/BC_vs_T_vol.png', width = 6, height = 4)
+```
+
+If you look at the help file for your geom (or the cheat sheet), you can see what aesthetics you can modify.
+
+```{r eval=FALSE}
+?geom_point
+```
+
+There are two things we can do. If we just want to do something to every point, we don't include it in an aes() statement, and we just set it to what we want. E.g.,
+
+```{r}
+
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate)) +
+  geom_point(col='red')
+
+```
+
+But if we want it to depend on the data, it has to go in the aes() statement.
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate,colour = Site)) +
+  geom_point()
+```
+
+Note that in the first case, we used quotation marks because it was a string, whereas in the second there were no quotations because it is a variable.
+
+Note also that you get a legend by default.
+
+### Exercise
+
+Refer to the geom_point help file, think about how you could show both Sex and Site on this plot simultaneously. Write code to do so in the plot below.
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate,shape = Site,col=Sex)) +
+  geom_point()
+```
+
+
+
+### Factors
+
+One thing you will notice about these data is that Sex here is recorded as a number, always taking the value 0 or 1. This is actually be what is called a factor. In this study, 0 indicates they were female, and 1 indicates they were not. This is a relatively common way to create data (though alternatively the authors could have used text labels in their spreadsheet which may have been clearer). We should recode these, and make them factors. To do this, we can use the function ifelse() -- this requires three parameters -- a test, then what to do if that test returns yes, or no. Then, we use factor() to put them in a convenient order.
+
+```{r}
+cancer_df$Sex_f <- ifelse(cancer_df$Sex == 0, 'female','male')
+
+cancer_df$Sex_f <- factor(cancer_df$Sex_f, levels = c('male',
+                                                  'female'))
+#we put them in this order because it fits the paper's narrative
+
+str(cancer_df)
+cancer_df$Sex_f
+
+```
+
+It is important to use factors and be careful about their levels so that we ensure that we correctly identify the reference level vs. treatments or similar, and so that when we produce plots etc. everything ends up in the right order!
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate,colour = Sex_f, shape = Site)) +
+  geom_point()
+```
+
+
+### Bar plots
+
+A simple and logical thing to do with these data is to compare the number of data points in different groups. The standard way to do this is a bar plot.
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f))+
+  geom_bar()
+```
+
+In this case, you don't need a 'y' variable, since it is by default the number of rows in a particular group -- note that y axis label is 'count'.
+
+We can fill the bars with some other factor, e.g., Site:
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, fill = Site))+
+  geom_bar()
+```
+
+It might be clearer to swap them:
+
+```{r}
+ggplot(cancer_df, aes(fill=Sex_f, x = Site))+
+  geom_bar()
+```
+
+Always experiment with different options and think about what communicates the data most effectively.
+
+You can also put the bars beside each other, rather than stacked.
+
+```{r}
+ggplot(cancer_df, aes(fill=Sex_f, x = Site))+
+  geom_bar(position = 'dodge')
+```
+
+It seems clear that there may be a difference between the sites here, if these were your data you would want to think about what this means based on your experience in the field etc.
+
+We might like to (a) change the colour and (b) flip the axes. In ggplot, we can do these types of things by adding extra optional commands to our code. You probably shouldn't expect to remember how to do all of these things; instead, you want to learn to find things.
+
+The quickest reference (but it is quite dense) is the ggplot cheat sheet. I tend to find it by just googling 'ggplot cheat sheet' but you can find it along with many other options here (its called the data visualisation sheet):
+
+https://github.com/rstudio/cheatsheets
+
+We can peruse it and see many of the different types of things we want to do, different geoms and the options they take, how to do try the things we want here. Based on what we see (and maybe also perusing the help file with ?scale_fill_brewer), we could try this:
+
+```{r}
+ggplot(cancer_df, aes(fill=Sex_f, x = Site))+
+  geom_bar(position = 'dodge')+
+  coord_flip()+
+  scale_fill_brewer(palette = 'Accent',na.value='grey')
+??sacle_fill_brewer
+
+```
+
+
+### Boxplots, violins, jitter, etc.
+
+Lets go back to basics and consider differences in body condition by the different Sexes.
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_point()
+```
+
+You can see that it knows that the variable is categorical rather than a number automatically. ggplot is smart about dealing with things like this.
+
+These are ugly / on top of each other. One way to deal with this it so move them around a bit.
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_jitter(width=0.2, height=0)
+```
+
+The key point is that all we had to change is the geom_ -- the data and the mapping are the same.
+
+Another way you might look at these data is with a boxplot.
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_boxplot()
+```
+
+You lose a bit of information doing this -- but you can do both!
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_boxplot()+
+  geom_jitter(width=0.2, height=0)
+```
+(note these look identical by design -- the index is calculated separately for each sex)
+
+Being able to easily switch between / layer different geometries is one of the best things about ggplot() it makes it very easy to iterate. But it takes practice.
+
+### Exercise
+
+Perhaps we prefer a violin plot to a boxplot. Write the code to do so in the block below.
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate,col=Sex_f))+
+  geom_violin()+
+  geom_jitter(width=0.2, height=0)
+```
+
+One slightly more advanced thing is that you can give different mappings/aesthetics to different geoms. So, say we want to look at different groups within our plot:
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_boxplot(aes(fill=Site))+
+  geom_jitter(width=0.2, height=0)
+```
+
+Note that it is pretty smart about how it does this / doesn't put them on top of each other. Also this plot is a bit terrible. A better way might be to use facets. For example,
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_boxplot(aes(fill=Site))+
+  geom_jitter(width=0.2, height=0)+
+  facet_wrap(~Site)
+```
+
+### Labels, legends, theme, etc.
+
+
+```{r}
+ggplot(cancer_df, aes(x=Sex_f, y = BCestimate))+
+  geom_boxplot(aes(fill=Sex_f))+
+  geom_jitter(width=0.2, height=0)+
+  facet_wrap(~Site)+
+  theme_bw(base_size = 14)+
+  xlab('') + ylab('Body condition (estimate)') + 
+  theme(legend.position = 'none')
+```
+
+Lets save it.
+
+```{r eval=FALSE}
+ggsave('figs/BC_by_sex_and_site.png',width = 6, height = 4)
+```
+
+### Histograms, density, etc.
+
+A different way to visualise these data would be some kind of histogram/density plot. And perhaps we will look at one of the tumor measures instead. Lets try:
+
+```{r}
+ggplot(cancer_df, aes(x = log_T_vol, fill = Sex_f))+
+  geom_histogram()
+```
+
+Stacked histograms are hard to read! so you could facet this, or use a density plot.
+
+```{r}
+ggplot(cancer_df, aes(x = log_T_vol, fill = Sex_f))+
+  geom_density()
+```
+
+Since you can't tell what is going on, we should make them transparent.
+
+```{r}
+ggplot(cancer_df, aes(x = log_T_vol, fill = Sex_f))+
+  geom_density(alpha= 0.5)
+```
+
+This might suggest that there is a difference between the sexes in terms of tumor volume. It is a little tricky to think about given that these samples have survivorship bias.
+
+### Exercise
+
+1. Facet the above figure by Site.
+2. Iterate on the figure to make it look better. Consider changing the axis labels, the overall theme (like ```theme_bw()``` used above), and the position of the legend.
+3. Experiment with adding ```scale_fill_brewer()``` to the plot. Look at the help file and try some different options to find something you like.
+4. Once you have something you like, save it with ```ggsave()```.
+
+```{r}
+ggplot(cancer_df, aes(x = log_T_vol, fill = Sex_f))+xlab('Log_T_vol')+
+  geom_density(alpha= 0.5)+ facet_wrap(~Site)+scale_fill_brewer(palette = "PiYG")
+ggplot(cancer_df, aes(x = log_T_vol, fill = Sex_f))+
+  geom_density(alpha= 0.5)+ facet_wrap(~Site)+theme_bw()
+```
+
+```{r eval=FALSE}
+ggsave('figs/T_vol_by_sex_site.png',width = 6, height = 8)
+```
+
+
+### Exercise
+
+Recall this figure:
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate,colour = Sex_f, shape = Site)) +
+  geom_point()
+```
+
+At the moment it is not particularly informative. See if you can learn more about this trend by (a) trying different facets and (b) adding ```geom_smooth()``` to the plot. Experiment with this and any layout settings you like until you produce something you are happy with, then save it. If you want to try something more complex, you could try the ```cut()``` function (check the help file).
+
+```{r}
+ggplot(data = cancer_df, mapping = aes(x = log_T_vol, y = BCestimate,colour = Sex_f, shape = Site)) +
+  geom_point()+geom_smooth()+facet_wrap(~Sex_f,ncol = 1)
+ggplot(data = cancer_df, mapping = aes(x = cut(log_T_vol,c(-Inf,1,2,3,4,Inf)), y = BCestimate,colour = Sex_f, shape = Site)) +
+  geom_point()+geom_smooth()+facet_wrap(~Sex_f,ncol = 1)+geom_jitter(width=0.2, height=0)#+cut(cancer_df$log_T_vol,c(-Inf,1,2,3,4,Inf))
+```
+
+### Exercise
+
+Use str() to remind yourself of the columns in the data set. Think about what you might like to know from these data, and produce a plot exploring the relationship you choose. Iterate on it until you are happy with it, and save it.
+
+## Take home messages
+
+- The learning curve is steep -- but as you get used to the syntax + your data, it gets easier.
+- Don't rush to the final plot, build up what you want in steps.
+- Think about what you want to show, try different ideas, iterate.
+- consider the ggplot2 cheat sheet: https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf
+- a more detailed resource that may help is the R graphics cookbook: https://r-graphics.org/
+
+
+
