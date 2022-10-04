@@ -1,0 +1,167 @@
+---
+title: "Two sample comparisons -- Bootstrap extension"
+author: "<SIHAO YANG U7457462>"
+date: "19 August 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+```
+
+## The problem
+
+You will have just worked through an exercise to compare the means of two samples and test the hypothesis that their population means are the same. In that exercise, you were introduced to permutation testing as an alternative approach to understanding significance. The extension invites you to explore yet another approach called the bootstrap. This is an additional section that you may paste at the bottom of your TwoSample_student.Rmd file.
+
+## The Bootstrap approach
+
+The core idea of the bootstrap is to treat the sample as though it is the population. Doing so, one can imagine resampling the sample from itself. But how do you get a sample of size n from a sample of size n?!? The answer is to sample with replacement.
+
+Returning to our original data, let's play with the bootstrap by resampling set_A.
+
+```{r}
+boot_sample <- group_data$set_A[sample(1:50,replace=TRUE)]
+```
+
+Let's compare the mean of this bootstrapped sample to the orginal mean:
+
+```{r}
+tibble(mean(boot_sample),mean(group_data$set_A))
+```
+
+Now complete the code block to generate many such bootstrap samples and record each of their means in a list called boot_dist_A.
+
+```{r}
+n_reps <- 10000
+boot_dist_A <- rep(0,n_reps)
+for (i in 1:n_reps)
+{
+    boot_sample <- group_data$set_A[sample(1:50,replace=TRUE)]
+    boot_dist_A[i] <- mean(boot_sample)
+}
+bootDistA<-tibble(boot_dist_A)
+bootDistA
+```
+
+Now plot a histogram of boot_dist_A and include a vertical line at the mean of the original set_A values.
+
+```{r}
+p2<-ggplot(bootDistA ,aes(x = boot_dist_A))+geom_histogram()+geom_vline(aes(xintercept = mean(group_data$set_A)), colour = 'black')
+p2 
+```
+
+The bootstrap is kind of magical, right? I mean, consider what would happen if you simply changed replace=TRUE to replace=FALSE! (You can try it if you'd like.) 
+
+What we just have done, without setting out to do so, is use the bootstrap to obtain the sampling distribution of the sample mean of set_A. That gives us some indication of how close the sample mean is likely to be to the population mean. There is a price to pretending that the sample is the population: it ignores the fact that another sample would be different. What that means is that the bootstrap underestimates variation -- it is, in a sense, too optimistic. We'll leave this alone for now, but it is worth mentioning.
+
+Let's get back to the original goal of comparing the two groups. How might we use the bootstrap in place of permutations? The reasoning behind the permutation approach was that it created a null scenario in which the values were drawn from a common population. To use the bootstrap for hypothesis testing, we need to do the same. Here's one way to do this:
+
+```{r}
+combined_set <- c(set_A-mean(set_A),set_B-mean(set_B))
+boot_combined <- combined_set[sample(1:100,replace=TRUE)]
+boot_A <- boot_combined[1:50]
+boot_B <- boot_combined[51:100]
+boot_AB<-tibble(boot_A,boot_B)
+
+```
+
+Explain in the block below what this code is doing. If you are feeling adventurous, you can add a second code block to plot the two histograms side by side.
+
+```{r eval=FALSE}
+# to generate a null sample that all of data are mixed together, and the sum of them is zero
+as.numeric(boot_A)
+as.numeric(boot_B)
+new_boot_data<- boot_AB%>%pivot_longer(cols=c('boot_A', 'boot_B'),
+                    names_to='ID',
+                    values_to='value')
+head(new_boot_data)
+p3<-ggplot(data = new_boot_data,aes(x = value))+geom_histogram(aes(fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()+geom_vline(aes(xintercept = mean(boot_AB), group = ID), colour = 'black')+facet_wrap(~ID,nrow=1)
+p3 
+# hist(boot_A)
+# hist(boot_B)
+```
+
+Now that we know how to generate null samples, we can once again compute our t statistic:
+
+```{r}
+boot_t_test_results <- t.test(boot_A,boot_B,var.equal=T)
+str(boot_t_test_results)
+```
+
+But what we really want is to do this many times. If you've made it this far, you can write this code on your own. Generate 10000 bootstrap samples and run the t test for each, using the variable boot_samp_dist to record all of the t statistics.
+
+```{r}
+# add 10000 loops variable
+n_reps <- 10000
+# create the sample distribution from 1 to 10000
+boot_samp_dist <- rep(0,n_reps)
+boot_t_test_results<-rep(0,n_reps)
+# use the for loop to construct the loop structure
+for (i in 1:n_reps)
+{
+    combined_set <- c(set_A-mean(set_A),set_B-mean(set_B))
+    boot_combined_data  <- combined_set[sample(1:100,replace=TRUE)]
+    boot_A1 <- boot_combined_data[1:50]
+    boot_B1 <- boot_combined_data[51:100]
+    # boot_AB<-tibble(boot_A,boot_B)
+    # as.numeric(boot_A)
+    # as.numeric(boot_B)
+    # new_group_data<- boot_AB%>%pivot_longer(cols=c('boot_A', 'boot_B'),
+    #                 names_to='ID',
+    #                 values_to='value')
+    # boot_t_test_results <- t.test(boot_A1,boot_B1,var.equal=T)
+# add loop counter
+    boot_samp_dist[i] <- t.test(boot_A1,boot_B1,var.equal=T)$statistic
+    
+}
+```
+
+Next make a visual comparison of our bootstrap and permutation results. To do so, produce the histograms of both sampling distributions (boot_samp_dist and samp_dist) side by side (using facet_wrap), with a different colour for each.
+
+```{r}
+comparison_samp_dist<-tibble(boot_samp_dist,samp_dist)
+# as.numeric(boot_samp_dist)
+# as.numeric(samp_dist)
+comparison_data<- comparison_samp_dist%>%pivot_longer(cols=c('boot_samp_dist', 'samp_dist'),
+                    names_to='ID',
+                    values_to='value')
+head(comparison_data)
+
+comparison_plot<- ggplot(comparison_data,aes(x=value))+geom_histogram(aes(fill=ID))+facet_wrap(~ID,nrow=1)
+comparison_plot
+```
+```{r}
+dist <- replicate(10000,diff(by(y, sample(tr, length(tr), FALSE), mean)))
+
+hist(dist, xlim = c(-3, 3), col = "black", breaks = 100)
+
+abline(v = diff(by(y, tr, mean)), col = "blue", lwd = 2)
+
+
+```
+
+
+Comment on what you observe. Based on your plot, do you think that the bootstrap p-value will be similar to that obtained by permutation?
+
+```{r eval=FALSE}
+# I think that the bootstrap p-value is like permutation p_value.
+```
+
+Finally, confirm this by computing the bootstrap p-value in the code block below:
+
+
+```{r}
+boot_pvalue_tibble <- tibble(value = boot_samp_dist,extreme = (abs(samp_dist) > abs(t_test_statistic)))
+
+boot_pvalue<- sum(boot_pvalue_tibble$extreme)/10000
+boot_pvalue
+```
+
+
+
+
