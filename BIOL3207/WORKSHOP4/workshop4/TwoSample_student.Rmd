@@ -1,0 +1,461 @@
+---
+title: "Two sample comparisons"
+author: "<SIHAO YANG U7457462>"
+date: "19 August 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The problem
+
+The purpose of this exercise is to compare the means of two samples and test the hypothesis that their population means are the same.
+
+## Initialisation
+
+Your first block of code should install any packages and load in the corresponding libraries. You can also read in any data files here. The file provided is comma-delimited, and the function "read_csv" works nicely. Note that "read_csv" and "read.csv" are not the same!
+
+```{r}
+library(tidyverse)
+group_data <- read_csv("./data/GroupData12Aug.csv")
+
+head(group_data)
+
+```
+
+
+## Exploring the Data
+
+Let's see what our data looks like. We'll use ggplot to make a histogram of set_A.
+
+```{r}
+ggplot(data = group_data,aes(x = set_A))+geom_histogram()
+```
+
+A ggplot always needs (at least) these three components:
+    1. data (in the form of a tibble or data frame);
+    2. a mapping -- the aes() function, which stands for aesthetic, that tells R how to map data coordinates to the plot; and,
+    3. a geometry (which always starts with geom_) which determines the shape of the plot.
+
+Let's plot the histogram for Set_B, but also add a smoothed density function on top of it. Note the syntax: geom_density has been added to the ggplot statement, and the call to geom_histogram has been given the argument "(aes(y = ..density..))". What would happen if that argument was removed?
+
+```{r}
+ggplot(data = group_data,aes(x = set_B))+geom_histogram(aes(y = ..density..))+geom_density()
+```
+
+We'll come back to this later when we focus on data visualisation.
+
+It sure would be helpful to see both distributions together in one plot. But this is
+difficult because set_A and set_B are column names instead of factor levels. Instead of a 50x2 tibble whose columns are Set_A and Set_B, ggplot wants a 100x2 tibble whose columns are the group membership (A or B) and the values. In other words, we want to pivot the table to make it longer. So, we need the function "pivot_longer".
+
+Look up the function "pivot_longer". Use it to complete the code block below to create a new 100x2 tibble such that:
+
+    Column 1, named "ID", contains the letter A or B to indicate group membership
+    Column 2, named "value", contains the corresponding number from group_data
+
+
+```{r}
+# new_group_data <- pivot_longer(...)
+as.numeric(group_data$set_A)
+as.numeric(group_data$set_B)
+new_group_data<-group_data %>% pivot_longer(cols=c('set_A', 'set_B'),
+                    names_to='ID',
+                    values_to='value')
+head(new_group_data)
+```
+
+How cool is that? The function "pivot_longer", and the opposite function "pivot_wider", are really useful for data wrangling. More on that later.
+
+Now our data is in the right shape to plot both distributions together. Copy the code from one your previous plots (with or without density) into the block below and modify it to plot both histograms together using different colours. If this is new to you, try searching for how to do this online. This is often how you will figure out how to make the plots you want.
+
+```{r}
+
+ggplot(data = new_group_data,aes(x = value))+geom_histogram(aes(y = ..density..))+geom_density()
+```
+
+Now that you've make this plot, what do you think could make it even better? Comment on this in the block below. 
+
+
+```{r eval=FALSE}
+# The plot could be improved by...
+p1<-ggplot(data = new_group_data,aes(x = value))+geom_histogram(aes(y = ..density..,fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()
+p1 
+```
+
+Because this exercise is about comparing means, it might be nice to indicate where the means of the distributions are. The lesson we learned above when calling pivot_longer still applies: to add the mean to a plot, ggplot wants a data column that pairs the means to their respective groups. So, now we need a 100x3 tibble that contains the group means in column 3. We can use tidyverse commands to accomplish this in a single line, flexing our wrangling skills once again.
+
+
+```{r}
+means_group_data <- new_group_data %>% group_by(ID) %>%  mutate(mean = mean(value))
+head(means_group_data)
+```
+
+What was that about? The %>%, as we will discuss later, is called the pipe and allows objects to flow from left to right. We start with our data tibble and tell R to consider the data grouped by ID (either A or B). Then we tell it to mutate the tibble by adding a new column, called "mean", that contains the mean of the group indicated in column 1. (This is just a taste of the wrangling we'll learn later!)
+
+Great, so now we have the means in a format that ggplot can use. To add a vertical line to a plot, we use the command "geom_vline". Copy your plot code in the block below and include the following command to add the means to the plot. 
+
+    geom_vline(aes(xintercept = mean, group = ID), colour = 'black')
+
+```{r}
+p2<-ggplot(data = means_group_data,aes(x = value))+geom_histogram(aes(fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()+geom_vline(aes(xintercept = mean, group = ID), colour = 'black')
+p2 
+```
+
+This might be easier to read if we present these as two stacked plots. To create this, copy your code from above and add:
+
+    facet_wrap(~ID,ncol=1)
+
+
+```{r}
+p2<-ggplot(data = means_group_data,aes(x = value))+geom_histogram(aes(fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()+geom_vline(aes(xintercept = mean, group = ID), colour = 'black')+facet_wrap(~ID,ncol=1)
+p2 
+```
+
+What if instead you wanted to place these side by side? Copy your code from above and modify it so that the histograms are instead side by side in a single row.
+
+```{r}
+p2<-ggplot(data = means_group_data,aes(x = value))+geom_histogram(aes(fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()+geom_vline(aes(xintercept = mean, group = ID), colour = 'black')+facet_wrap(~ID,nrow=1)
+p2 
+```
+
+Which of these many plots do you find most informative, and why? Comment on this in the block below. 
+
+```{r eval=FALSE}
+# The most informative plot is the last one because there is no overlap on each data,and the mean line let us know the difference between them,The left-right emission makes the data uncompressed and more intuitive to reflect the size of the data.
+```
+
+How different do the means look to you? Is there evidence that the two groups of sampled data, set_A and set_B, come from populations with different means? Let's use the power of R to test this. 
+
+## Hypothesis testing
+
+We're familiar with the t-test, and it is a sensible choice here. In the block below, enter the code to run a two-sample t-test assuming equal variance. (Why equal variance? Just to keep things simple. Plus, the variances (spread) look pretty similar in the plot, right?)
+
+
+```{r}
+t.test(group_data$set_A,group_data$set_B)
+```
+In the block below, write the null hypothesis for this t-test:
+
+```{r eval=FALSE}
+# H_0 (null hypothesis): The data of set_A and set_B comes from the same population.
+```
+
+Now try removing the equal variance assumption and see what happens. It's always reassuring when the results are robust to these types of choices. That said, when the p-value is close to the chosen significance threshold, even small effects may be consequential.
+
+The t-test returns a table of results, but it is also an object in R. Copy your code from above into the block below and assign the t-test to a variable
+
+```{r}
+t_test_results <- t.test(group_data$set_A,group_data$set_B)
+str(t_test_results)
+```
+The t-test is a list with 10 attributes, each of which can be accessed from the variable. In the block below, complete the code to assign the computed t statistic to the variable t_test_statistic.
+
+```{r}
+t_test_statistic <- t_test_results$statistic
+t_test_statistic
+```
+
+You'll have already noticed that the p-value is almost exactly 0.05. Now you've found that the t statistic is almost exactly -2. This is no accident. Now that we know about sampling distributions: what's the sampling distribution of the t statistic? Well, the answer is the t distribution! There are many t distributions, each defined by a number of degrees of freedom (here t_test_results$parameter = 98), and you'll probably recall from earlier statistics classes that the t distribution with many degrees of freedom looks a lot like the standard normal distribution. But don't take my word for it -- let's plot them in R:
+
+```{r}
+ggplot(tibble(x = c(-4, 4)), aes(x = x)) + stat_function(fun = dt, args = list(df = 98),colour="red") + stat_function(fun = dnorm, args = list(0,1),colour="blue")
+```
+
+Basically the same! With 98 degrees of freedom, there's not really any difference between using a t-test or a Z-test, and you can think about the t statistic in terms of the standard Normal distribution. In that context, how do we interpret a value of -2 (rounded from -1.98)? A value of -2 corresponds to two standard deviations less than the mean. To obtain a value as or more extreme by chance is to obtain a sample from the standard Normal distribution that is at least two standard deviations away from the mean zero. You'll recall that this happens only 5% of the time, which is why the p-value is 0.05.
+
+But what if we didn't know the sampling distribution of the t statistic under the null hypothesis?!?
+
+## Permutation testing
+
+Here is where you forget the statistics you learned in other classes. Let's just use some logic. We have two samples, A and B, each with 50 numbers, and we want to test whether there is a difference between the populations from which they arose. Remember that we are interested in what happens when the null hypothesis is true; that is, when the samples are actually drawn from the same population. We can model that by "forgetting" which numbers came from A and which numbers came from B, and then randomly assigning the 50 A and 50 B labels. This is the basis for a "permutation test", because is relies of the sampling distribution of the statistic when the labels are permuted.
+
+What exactly is a permutation? A permutation is just a reordering of the indices of a list/vector. See what happens when you run the code below.
+
+```{r}
+sentence <- c("you","have","become","powerful")
+sentence
+sentence[c(3,4,1,2)]
+```
+
+Here we have rearranged a sentence by permuting its indices so that the new word order is 3,4,1,2. We can also choose a random permutation by sampling the numbers 1:4 without replacement. Complete the code block below to do this, and then run it a few times to observe how the permuted_sentence changes. This is how we are going to randomise our data.
+
+```{r}
+permuted_sentence <- sentence[sample(4,replace=F)]
+permuted_sentence
+```
+
+Now let's try this out on our data. Recall that new_group_data is a 100x2 tibble such that:
+
+    Column 1, named "ID", contains the letter A or B to indicate group membership
+    Column 2, named value, contains the corresponding number from group_data
+    
+To randomise the assignment of value to ID, we just need to permute either of the two columns. Complete the code block below to create a permuted version of the tibble called "permuted_group_data" by permuting the ID column.
+
+```{r}
+permutation <- sample(1:100,replace = F)
+permuted_group_data <- new_group_data[permutation,]
+head(permuted_group_data)
+
+```
+
+Now pretend that this is our real data and repeat the t-test from before.
+
+```{r}
+permuted_t_test_results <- t.test(permuted_group_data$value[which(permuted_group_data$ID=="set_A")],permuted_group_data$value[which(permuted_group_data$ID=="set_B")],var.equal=T)
+str(permuted_t_test_results)
+permuted_t_test_statistic <- permuted_t_test_results$statistic
+
+```
+
+There are many ways to accomplish what was done by the two code blocks above. The tidyverse command "mutate" makes the permutation easy as shown in the code block below.
+
+```{r}
+new_group_data %>% mutate(ID = ID[sample(row_number())])
+
+```
+
+Note, however, that this doesn't change new_group_data, nor does it assign the permuted table to a new variable. To mirror our non-tidy approach, we would need to add the assignment as in the code block below. Each time this code block is run, the results will change.
+
+```{r}
+permuted_group_data <- new_group_data %>% mutate(ID = ID[sample(row_number())])
+head(permuted_group_data)
+```
+
+The key quantity of interest is the t statistic. Having observed the value -1.98, we want to know how extreme that is in terms of its sampling distribution. We already have one draw from that sampling distribution:
+
+```{r}
+permuted_t_test_statistic
+```
+
+Now we just need to repeat this many times. We'll follow the approach introduced previously and wrap the code in a for loop. The code block below is functional and will run, though it may take a minute to finish. (If it takes too long, you can always decrease the value of n_reps.) To complete the code block, add comments above each line of code as indicated to describe what that line is doing.
+
+```{r}
+# add 10000 loops variable
+n_reps <- 10000
+# create the sample distribution from 1 to 10000
+samp_dist <- rep(0,n_reps)
+# use the for loop to construct the loop structure
+for (i in 1:n_reps)
+{
+    # generate the permuated group by sampling the ID
+    permuted_group_data <- new_group_data %>% mutate(ID = ID[sample(row_number())])
+    # use the t.test to figure out the mean difference between permuted set_A and set_B
+    permuted_t_test_results <- t.test(permuted_group_data$value[which(permuted_group_data$ID=="set_A")],permuted_group_data$value[which(permuted_group_data$ID=="set_B")],var.equal=T)
+# loop again
+    samp_dist[i] <- permuted_t_test_results$statistic
+}
+```
+
+Let's review where we are. From our original data, we computed a t statistic to quantify the difference between the sample means. We used the t.test function to do so, but we did not actually use the "test" part; instead, we just used it to calculate the t statistic. To demonstrate this, here's the calculation done the long way:
+
+```{r}
+set_A <- group_data$set_A
+set_B <- group_data$set_B
+mean_A <- mean(group_data$set_A)
+mean_B <- mean(group_data$set_B)
+pooled_sd <- sd(c(set_A-mean_A,set_B-mean_B))
+t_stat <- ((mean_A - mean_B)/pooled_sd) / (sqrt(1/50 + 1/50) * sqrt((50+50-1)/(50-1+50-1)))
+t_stat
+```
+
+The value of t_stat is the same as that of t_test_statistic calculated using the t.test function. Note how t_stat was calculated just above. The first part of the equation, ((mean_A - mean_B)/pooled_sd), is the effect size and estimates the standardised mean difference between the populations. This is then scaled by a function of the sample size to compute the t statistic.
+
+A permutation approach was used to generate 10000 (n_reps) random t statistics from the sampling distribution under the null hypothesis. We are interested in what fraction of these 10000 are more extreme than the value computed for our original data. The code block below visualises this in a plot. Add a detailed comment above each line to explain what the code is doing.
+
+```{r}
+# All the sample distribution data and its absolute value compared with t_test_statistic
+plot_tibble <- tibble(value = samp_dist,extreme = (abs(samp_dist) > abs(t_test_statistic)))
+# use ggplot to create the histogram of plot_tibble
+ggplot(plot_tibble,aes(x=value,fill=extreme))+geom_histogram(bins=200)
+plot_tibble
+```
+
+Finally, we can compute a p-value. (We call this an "empirical p-value" because it is not computed from the theoretical sampling distribution.) The p-value here is simply the proportion of value in the sampling distribution that are more extreme than the observed value. Complete the code block to compute the p-value.
+
+```{r}
+permutation_pvalue <- mean(plot_tibble$extreme)
+permutation_pvalue
+```
+
+How does this compare to p-value computed using the actual t-test?
+
+```{r}
+tibble(permutation_pvalue,t_test_results$p.value)
+```
+
+Finally, let's make a visual comparison or our permutation sampling distribution to the theoretical sampling distribution (a t-distribution with 98 df):
+
+
+```{r}
+ggplot(plot_tibble, aes(x = value)) + geom_histogram(aes(y = ..density..),bins=50) + stat_function(fun = dt, args = list(df = 98),colour="red")
+```
+
+That is satisfying, isn't it? What is nice about the permutation approach is that it can be used when the theoretical sampling distribution is unknown. But that doesn't mean that the approach can always be used. In the code block below, list at least one case when the permutation approach would not be a good idea.
+
+```{r eval=FALSE}
+# The permutation approach would not be a good idea when the sample size is big(large than 10000) and the calculation of each dataset is huge, the permutation could not show the distribution .
+```
+
+---
+title: "Two sample comparisons -- Bootstrap extension"
+author: "<SIHAO YANG U7457462>"
+date: "19 August 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+```
+
+## The problem
+
+You will have just worked through an exercise to compare the means of two samples and test the hypothesis that their population means are the same. In that exercise, you were introduced to permutation testing as an alternative approach to understanding significance. The extension invites you to explore yet another approach called the bootstrap. This is an additional section that you may paste at the bottom of your TwoSample_student.Rmd file.
+
+## The Bootstrap approach
+
+The core idea of the bootstrap is to treat the sample as though it is the population. Doing so, one can imagine resampling the sample from itself. But how do you get a sample of size n from a sample of size n?!? The answer is to sample with replacement.
+
+Returning to our original data, let's play with the bootstrap by resampling set_A.
+
+```{r}
+boot_sample <- group_data$set_A[sample(1:50,replace=TRUE)]
+```
+
+Let's compare the mean of this bootstrapped sample to the orginal mean:
+
+```{r}
+tibble(mean(boot_sample),mean(group_data$set_A))
+```
+
+Now complete the code block to generate many such bootstrap samples and record each of their means in a list called boot_dist_A.
+
+```{r}
+n_reps <- 10000
+boot_dist_A <- rep(0,n_reps)
+for (i in 1:n_reps)
+{
+    boot_sample <- group_data$set_A[sample(1:50,replace=TRUE)]
+    boot_dist_A[i] <- mean(boot_sample)
+}
+bootDistA<-tibble(boot_dist_A)
+bootDistA
+```
+
+Now plot a histogram of boot_dist_A and include a vertical line at the mean of the original set_A values.
+
+```{r}
+p2<-ggplot(bootDistA ,aes(x = boot_dist_A))+geom_histogram()+geom_vline(aes(xintercept = mean(group_data$set_A)), colour = 'black')
+p2 
+```
+
+The bootstrap is kind of magical, right? I mean, consider what would happen if you simply changed replace=TRUE to replace=FALSE! (You can try it if you'd like.) 
+
+What we just have done, without setting out to do so, is use the bootstrap to obtain the sampling distribution of the sample mean of set_A. That gives us some indication of how close the sample mean is likely to be to the population mean. There is a price to pretending that the sample is the population: it ignores the fact that another sample would be different. What that means is that the bootstrap underestimates variation -- it is, in a sense, too optimistic. We'll leave this alone for now, but it is worth mentioning.
+
+Let's get back to the original goal of comparing the two groups. How might we use the bootstrap in place of permutations? The reasoning behind the permutation approach was that it created a null scenario in which the values were drawn from a common population. To use the bootstrap for hypothesis testing, we need to do the same. Here's one way to do this:
+
+```{r}
+combined_set <- c(set_A-mean(set_A),set_B-mean(set_B))
+boot_combined <- combined_set[sample(1:100,replace=TRUE)]
+boot_A <- boot_combined[1:50]
+boot_B <- boot_combined[51:100]
+boot_AB<-tibble(boot_A,boot_B)
+
+```
+
+Explain in the block below what this code is doing. If you are feeling adventurous, you can add a second code block to plot the two histograms side by side.
+
+```{r eval=FALSE}
+# to generate a null sample that all of data are mixed together, and the sum of them is zero
+as.numeric(boot_A)
+as.numeric(boot_B)
+new_boot_data<- boot_AB%>%pivot_longer(cols=c('boot_A', 'boot_B'),
+                    names_to='ID',
+                    values_to='value')
+head(new_boot_data)
+p3<-ggplot(data = new_boot_data,aes(x = value))+geom_histogram(aes(fill=ID))+ylab("NEW GROUP DATA")+theme_classic()+geom_density()+geom_vline(aes(xintercept = mean(boot_AB), group = ID), colour = 'black')+facet_wrap(~ID,nrow=1)
+p3 
+# hist(boot_A)
+# hist(boot_B)
+```
+
+Now that we know how to generate null samples, we can once again compute our t statistic:
+
+```{r}
+boot_t_test_results <- t.test(boot_A,boot_B,var.equal=T)
+str(boot_t_test_results)
+```
+
+But what we really want is to do this many times. If you've made it this far, you can write this code on your own. Generate 10000 bootstrap samples and run the t test for each, using the variable boot_samp_dist to record all of the t statistics.
+
+```{r}
+# add 10000 loops variable
+n_reps <- 10000
+# create the sample distribution from 1 to 10000
+boot_samp_dist <- rep(0,n_reps)
+boot_t_test_results<-rep(0,n_reps)
+# use the for loop to construct the loop structure
+for (i in 1:n_reps)
+{
+    combined_set <- c(set_A-mean(set_A),set_B-mean(set_B))
+    boot_combined_data  <- combined_set[sample(1:100,replace=TRUE)]
+    boot_A1 <- boot_combined_data[1:50]
+    boot_B1 <- boot_combined_data[51:100]
+    # boot_AB<-tibble(boot_A,boot_B)
+    # as.numeric(boot_A)
+    # as.numeric(boot_B)
+    # new_group_data<- boot_AB%>%pivot_longer(cols=c('boot_A', 'boot_B'),
+    #                 names_to='ID',
+    #                 values_to='value')
+    # boot_t_test_results <- t.test(boot_A1,boot_B1,var.equal=T)
+# add loop counter
+    boot_samp_dist[i] <- t.test(boot_A1,boot_B1,var.equal=T)$statistic
+    
+}
+```
+
+Next make a visual comparison of our bootstrap and permutation results. To do so, produce the histograms of both sampling distributions (boot_samp_dist and samp_dist) side by side (using facet_wrap), with a different colour for each.
+
+```{r}
+comparison_samp_dist<-tibble(boot_samp_dist,samp_dist)
+# as.numeric(boot_samp_dist)
+# as.numeric(samp_dist)
+comparison_data<- comparison_samp_dist%>%pivot_longer(cols=c('boot_samp_dist', 'samp_dist'),
+                    names_to='ID',
+                    values_to='value')
+head(comparison_data)
+
+comparison_plot<- ggplot(comparison_data,aes(x=value))+geom_histogram(aes(fill=ID))+facet_wrap(~ID,nrow=1)
+comparison_plot
+```
+
+
+
+Comment on what you observe. Based on your plot, do you think that the bootstrap p-value will be similar to that obtained by permutation?
+
+```{r eval=FALSE}
+# The two histogram above are almost the same and the distribution fit the normal distribution, I think that the bootstrap p-value is like permutation p_value.
+```
+
+Finally, confirm this by computing the bootstrap p-value in the code block below:
+
+
+```{r}
+boot_pvalue_tibble <- tibble(value = boot_samp_dist,extreme = (abs(samp_dist) > abs(t_test_statistic)))
+
+boot_pvalue<- sum(boot_pvalue_tibble$extreme)/10000
+boot_pvalue
+```
+
+
+
+

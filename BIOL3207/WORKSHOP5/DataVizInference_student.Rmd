@@ -1,0 +1,392 @@
+---
+title: "Data Visualisation and Inference"
+author: "<SIHAO YANG U7457462>"
+date: "26 August 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The previous workbook provided a broad survey of ggplot functionality along with some hands-on experience making a variety of plots. This built on last week's exposure to some visualisation exercises in the context of statistical inference and sampling. This workbook aims to combine the two, building your visualisation skills through the active interrogation of a penguin data set.
+
+
+## Preliminaries
+
+Your first block of code should install any packages and load in the corresponding libraries. You can also read in any data files here.
+
+In what follows, we will be using the penguins data that is part of the "palmerpenguins" package along with the now familiar tidyverse.
+
+```{r}
+library(tidyverse)
+
+# Remove the comment if "palmerpenguins" has not yet been installed
+install.packages('palmerpenguins')
+
+library(palmerpenguins)
+
+head(penguins)
+```
+
+Let's get to know this data set. The code block uses "str", but you may also want to try out "glimpse", which is similar to "head" above. Or, you can use "view" to bring up the tibble as a spreadsheet in another window. So many options, at least for a dataset of this size. (You wouldn't want to use view if the tibble had 1000000 rows!)
+
+```{r}
+str(penguins)
+glimpse(penguins)
+levels(penguins$species)
+levels(penguins$island)
+
+```
+The tibble contain data for 344 penguins. There are 3 different species of penguins in this dataset, observed across 3 islands in the Palmer Archipelago, Antarctica. For most of the penguins, additional characteristics of the penguins were recorded.
+
+## Exploring the Data
+
+You can already see above that there is some missing data, conveniently encoded here as "NA". For how many of the 344 penguins is there some data missing? Write code in the block below to answer this question. As is generally the case in R, there are many ways to do this. You may for example wish to use "is.na" or "complete.cases", or do something else entirely.
+
+```{r}
+#is.na(penguins)
+complete.cases(penguins)
+```
+
+Now let's get a first look at the data. Make a simple scatterplot of flipper length versus bill length.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = bill_length_mm, y = flipper_length_mm)) +
+  geom_point()
+```
+
+Notice the comment that appears above the plot: "Warning: Removed 2 rows containing missing values (geom_point)". This means that measurements were missing for two of the penguins; however, ggplot is smart enough to ignore those rows rather than return an error.
+
+You will have observed from the plot that flipper length tends to increase with bill length. This is often the case with such measurements, because in general a larger penguin is likely to have larger features. We can quantify the strength of the linear relationship by computing the correlation.
+
+
+```{r}
+cor.test(penguins$bill_length_mm,penguins$flipper_length_mm)
+```
+
+We can also add the linear trend line to the plot using geom_smooth. To do this yourself, copy your ggplot code from above to the code block below and add "geom_smooth(method='lm')". 
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = bill_length_mm, y = flipper_length_mm)) +
+  geom_point()+geom_smooth(method = 'lm')
+```
+
+Notice the additional comment now above the plot: "`geom_smooth()` using formula 'y ~ x'". You may recall this syntax from BIOL 2202. When we used "method='lm'", we told R to construct a linear model of y (flipper length) as a function of x (bill length). The call to geom_smooth then adds the result as the regression line.
+
+Let's consider another pair of measurements: body mass and bill depth. Run the same correlation test as above on those two measurements:
+
+```{r}
+cor.test(penguins$body_mass_g,penguins$bill_depth_mm)
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y =bill_depth_mm )) +
+  geom_point()+geom_smooth(method = 'lm')
+```
+
+In a sentence, describe the results of this correlation test in the block below.
+
+```{r eval=FALSE}
+# According to the correlation test, given the cor is-0.4719156，body mass and bill depth show a negative correlation, that is, as body mass increases bill depth decreases,given the pvalue is less than 0.05,which tell us that the experimental results are statistically significant.
+```
+
+Let's also visualise the data, again using a scatterplot, this time with bill depth on the y-axis and body mass on the x-axis. Do not use geom_smooth to add a line just yet.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y =bill_depth_mm )) +
+  geom_point()
+```
+
+What does this plot tell you about the relationship between bill depth and body mass? Describe your observations in the block below.
+
+```{r eval=FALSE}
+# The plot shows that it appears that the bill depth increases with increasing body mass in different weight ranges, but the overall trend is for the bill depth to continue to decrease with increasing body mass.
+```
+
+Now let's add the linear trend line to the plot.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y =bill_depth_mm )) +
+  geom_point()+geom_smooth(method='lm')
+```
+
+Is that what you expected? Is the regression line a good model of how bill depth varies with body mass? Comment in the block below.
+
+```{r eval=FALSE}
+# Yes, the trend line shows the negative correlation between bill depth and body mass,actually, I don't think regression is a good model to present the relationship between bill depth and body mass, the plot obviously shows that there may be a reversal correlation in different body mass regions.
+```
+
+## Further Exploring the Data
+
+When data is heterogeneous to the extent that there are distinct clusters, it is usually best to deal with the heterogeneity before calculating statistics or constructing models. This is one of the reasons why visualisation is so crucial! Here, the plot makes it very clear that there are two distinct clusters, though for the moment the source of these clusters is unknown.
+
+Let's dig a little deeper into the data to understand how the three penguin species differ. Try making a box plot of the body mass distributions for each species.
+
+```{r}
+ggplot(penguins,aes(y=body_mass_g,x=species))+geom_point()+facet_wrap(~species,nrow = 1)+geom_boxplot()+geom_jitter()
+```
+
+One of the species appears to be heavier than the others. Let's reinforce that observation with a more informative plot that also shows the individual values (points). This could be a violin plot with jitter, or something else of your choosing.
+
+```{r}
+ggplot(penguins,aes(y=body_mass_g,x=species))+geom_point()+facet_wrap(~species,nrow = 1)+geom_violin()+geom_jitter()
+```
+
+These plots suggest that species differences may be responsible for the clusters previously observed. Let's repeat the scatterplot that showed the clusters, but use a different colour for each species. Write that code in the block below.
+
+```{r}
+ggplot(penguins,aes(y=body_mass_g,x=species,col=species))+geom_point()+facet_wrap(~species,nrow = 1)+geom_violin()+geom_jitter()
+```
+
+Wouldn't it be nice if we could also indicate the linear trend by species? Try just adding geom_smooth again and see what happens! Below we will call this your very colourful plot.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y =bill_depth_mm ,col=species)) +
+  geom_point()+geom_smooth(method='lm')+facet_wrap(~species,nrow=1)
+```
+
+R made that so easy! Notice the consistent, positive linear trends for each species. So, while the overall correlation is quite negative, the within-species correlations are quite positive. This is a phenomenon known as Simpson's Paradox (or the Yule-Simpson Effect), and it happens uncomfortably often. This is almost as bad as when your scatterplot shows the face of a monkey (remember Workshop 2?), except that it is very real. Always visualise your data when possible, as soon as possible...
+
+# A Brief Digression into Linear Models
+
+A consequence of the above is that neither standard correlation nor regression are appropriate to the data. It appears as though we have a common slope but multiple intercepts. We can fit that model in R using lm: 
+
+```{r}
+common_slope_model <- lm(bill_depth_mm~body_mass_g+species,data=penguins)
+summary(common_slope_model)
+```
+
+How do we read these results? Species is a factor whose first level is Adelie, and you can check this by calling "levels(penguins$species)". The intercept for the model, shown as "(Intercept)" above, corresponds to the intercept for the Adelie regression line. If we were to extend the x-axis to reach zero and also extend the red line at a constant slope, then this intercept (12.763) is where that line would cross the y-axis at x=0. On the other hand, "speciesChinstrap" represents the *difference* between Adelie intercept and the Chinstrap intercept. So the Chinstrap intercept is 12.763 + 0.025 = 12.788. Likewise, the Gentoo intercept is 12.763 + -5.439 = 7.324, a lower intercept which follows the intuition from the plot.
+
+The entry for "body_mass_g" is the common regression slope and it appears to be highly significant (as in nonzero). The intercept is likewise highly significant (also as in nonzero); however, "speciesChinstrap" is not. That is, because we cannot distinguish the regression lines for Adelie and Chinstrap, we do not observe a significant *difference* between them.
+
+The model is a direct reflection of the plot, and it was easy to guess which estimates would be significant. So clear was the picture that we did not even bother considering whether each species might have different slopes, but we could have tested that too. You may recall that different slopes would be captured by an *interaction* between body_mass_g and species. This makes intuitive sense: if body_mass_g is the slope, then an interaction with species means that the slope is species dependent. We can add the interaction to the model by replacing "+" in the lm statement with "*":
+
+```{r}
+different_slope_model <- lm(bill_depth_mm~body_mass_g*species,data=penguins)
+summary(different_slope_model)
+```
+
+The last two entries of the summary are the interaction terms (indicated by ":") and as expected are not significant.
+
+We will return to models in Week 8. This digression was a preview whose purpose was to emphasise how visualisation and models are complementary, with models often quantifying what has been qualitatively observed.
+
+# A Brief Digression into Permutations, again
+
+In the previous workshop, we explored permutations as an approach to understanding how our statistics behave under the null hypothesis. To briefly reinforce those exercises, let's consider here whether the differences we just observed between penguin species are real. (Spoiler alert: they obviously are, and this is just to make a point.) To get a sense of how things would look if the relationship between bill depth and body mass was not mediated by species, let's scramble the species labels in the tibble.
+
+```{r}
+permuted_penguins <- penguins
+permuted_penguins$species <- permuted_penguins$species[sample(length(penguins$species))]
+head(permuted_penguins)
+```
+
+What we've just done is scrambled the first column and kept the remaining columns unchanged. Go ahead and repeat your very colourful plot, pasting the code below and replacing penguins with permuted_penguins.
+
+```{r}
+ggplot(data = permuted_penguins, mapping = aes(x = body_mass_g, y = bill_depth_mm, colour=species)) +
+  geom_point() + geom_smooth(method='lm')
+```
+Qualitatively speaking, if the lines in this plot look different than before, then the species differences are likely to be real. Of course, we would want to observe this across many permutations, because that is how we conclude that effect of species is unlikely to be due to chance. Feel free to run the previous two code blocks again (and again), re-randomising the species labels and then plotting the results. The permuted data behaves very different than the real data, suggesting the observed pattern in your very colourful plot is attributable to species differences. You see the same thing with the permuted boxplot, etc.:
+
+```{r}
+ggplot(data = permuted_penguins, mapping = aes(x = species,y = body_mass_g,colour=species)) +
+  geom_boxplot() 
+```
+
+Just to drive the point home, let's generate a few more permuted versions of the above plot and contrast them with the true data.
+
+```{r}
+# This code block creates a plot matrix comparing the actual body mass box plot (upper right) to those obtained from many permutations
+
+# Build a tibble to store the data, beginning with the actual data
+perm_tibble <- penguins %>% select(species,body_mass_g)
+# Set the number of permutations, here 24 for better viewing 
+n_reps <- 24
+# Grow the tibble column by column with permuted values
+for (i in 1:n_reps)
+{
+    # Name the permutation reps P1,P2,...
+    new_name <- paste("P",i,sep="")
+    # Generate a permuted column of body mass values. Note that this is equivalent     to permuting the species labels; however, permuting values makes the plotting     easier
+    new_col <- tibble(penguins$body_mass_g[sample(length(penguins$species))])
+    # Assign the new column its name
+    colnames(new_col) <- new_name
+    # Attach the permuted column to the end of the growing tibble
+    perm_tibble <- cbind(perm_tibble,new_col)
+}
+# Record the order of the column names for later use as plot order
+factor_levels <- colnames(perm_tibble)[2:(n_reps+2)]
+# Pivot the tibble built above into long form
+plot_tibble <- pivot_longer(perm_tibble,cols=2:(n_reps+2),names_to = c("rep"))
+# Turn the rep column into a factor, using the order stored above
+plot_tibble$rep <- factor(plot_tibble$rep,levels=factor_levels)
+# Plot a matrix of box plots, beginning with the real data, followed from left to right with P1,P2,etc. Set the number of columns in the plot matrix to 5 for viewing. Remove the x-axis annotations.
+ggplot(plot_tibble,aes(x=species,y=value,colour=species))+geom_boxplot()+facet_wrap(~rep,ncol=5)+theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())
+```
+
+
+## Exploring the Data Even More
+
+Remember that the 3 different species of penguins in this dataset were found across 3 islands in the Palmer Archipelago. We may also wish to discover whether there were differences in penguin characteristics between the islands. Of course, it may be that each species is unique to one island, in which case we could not distinguish between species differences and island differences. You may recall this concept from BIOL 2202 as "confounding". Let's use some tidyverse magic to count the number of each species on each island:
+
+```{r}
+penguins %>% count(species,island)
+```
+
+It appears that only Adelie penguins were found on multiple islands. Let's make a visual comparison of their characteristics on each island and see whether we can spot any differences. As a start, let's compare box plots of body mass. Note how the code is constructed. Because we are only comparing Adelie penguins, we use filter to omit the non-Adelie rows of penguins. We then send the filtered tibble as data to ggplot. The pipes (%>%) join the code together, and each command to the right uses the output from the left as its data input. As we have made no assignments (i.e. using "<-" or "="), no variables have changed.
+
+```{r}
+penguins %>% filter(species == "Adelie") %>% ggplot(mapping = aes(x = island,y = body_mass_g,colour=island)) + geom_boxplot() 
+```
+
+Next, let's examine the relationship between body mass and bill depth for Adelie penguins on each island. Write code in the block below to do so, once again using geom_smooth.
+
+```{r}
+penguins %>% filter(species == "Adelie") %>% ggplot(mapping = aes(x = body_mass_g,y = bill_depth_mm,colour=island)) + geom_smooth(method = 'lm') +geom_point()
+```
+
+The relationship between bill depth and body mass does not appear to vary by island. (That is to say, if we were to run the linear model, we would not find a significant  body_mass_g:island interaction.)
+
+There's so much more to consider. We have male penguins and female penguins, and perhaps their characteristics are different. Let's start by counting how many male and female penguins there are of each species in the dataset. Write code in the block below to do this.
+
+```{r}
+Ade_number_male<-male_penguins<-penguins %>% filter(species == "Adelie")%>% filter(sex=='male')%>%count(sex)
+Ade_number_female<-female_penguins<-penguins %>% filter(species == "Adelie")%>% filter(sex=='female')%>%count(sex)
+Chi_number_male<-male_penguins<-penguins %>% filter(species == "Chinstrap")%>% filter(sex=='male')%>%count(sex)
+Chi_number_female<-female_penguins<-penguins %>% filter(species == "Chinstrap")%>% filter(sex=='female')%>%count(sex)
+
+Gen_number_male<-male_penguins<-penguins %>% filter(species == "Gentoo")%>% filter(sex=='male')%>%count(sex)
+Gen_number_female<-female_penguins<-penguins %>% filter(species == "Gentoo")%>% filter(sex=='female')%>%count(sex)
+Ade_number_male
+Ade_number_female
+Chi_number_male
+Chi_number_female
+Gen_number_male
+Gen_number_female
+```
+
+Was NA counted as a sex in your table? That's not so helpful. Let's filter those out first. Finish the code block as above to do so.
+
+```{r}
+# penguins %>% filter(!(is.na(sex))) %>% 
+#   male_penguins<-penguins %>% filter(!(is.na(sex))) %>%filter(species == "Adelie")%>% filter(sex=='male')
+# female_penguins<-penguins%>% filter(!(is.na(sex))) %>% filter(species == "Adelie")%>% filter(sex=='female')
+male_penguins<-penguins %>% filter(!(is.na(sex))) %>% filter(sex=='male')
+female_penguins<-penguins%>% filter(!(is.na(sex))) %>% filter(sex=='female')
+head(penguins)
+```
+
+Now let's examine how body mass depends on species and sex. Use facet_wrap (or facet_grid) to make an informative plot, and be sure to filter out the NA values first.
+
+```{r}
+penguins%>%filter(!(is.na(sex))) %>% ggplot(aes(y=body_mass_g, x = sex, colour=sex))+facet_grid(~species) + geom_boxplot() +  geom_jitter(width = 0.5)
+```
+
+Based on your plot, does one sex appear to be heavier than the other? Does the sex difference appear to differ by species (that is, does there appear to be a sex:species interaction)? Answer below, referencing the plot you just made.
+
+```{r eval=FALSE}
+
+```
+
+Previously we examined the relationship between bill depth and body mass across species. Let's now also consider the effect of sex, by including it in your very colourful plot as a shape.
+
+```{r}
+penguins%>%filter(!(is.na(sex))) %>%ggplot( mapping = aes(x = body_mass_g, y =bill_depth_mm ,col=sex)) +
+  geom_point()+geom_smooth(method='lm')
+
+```
+
+Based on your plot, does the effect of body mass on bill depth (slope) appear to depend on either species or sex? Comment in the block below.
+
+```{r eval=FALSE}
+# I think sex has a big influence on the depth of the bill, as can be seen from the plot where it is clear that the depth of the bill is greater in males than in females at the same weight.
+```
+
+This is becoming tedious. There must be a way to visualise many relationships at once. Let's try out ggpairs in the package GGally.
+
+```{r}
+#install.packages('GGally')
+library(GGally)
+```
+
+You could just try out ggpairs(penguins) and see what happens. But a less messy approach would be to try it out on a subset of the data. Here's what happens when ggpairs is applied to the four continuous measurements:
+
+```{r message = FALSE, warning = FALSE}
+penguins %>% select(bill_length_mm,bill_depth_mm,flipper_length_mm,body_mass_g) %>%
+    ggpairs()
+```
+
+What was that?!? Calling ggpairs created a pairwise comparison of the four measurements. The 4x4 plot matrix contains a wealth of information. The diagonal shows the density (smoothed histogram) of each measurement, while their pairwise scatterplots are shown below the diagonal. Above the diagonal are the corresponding pairwise correlations.
+
+Of course, not all information is useful, and we know already that the correlations in this dataset are misleading due to species differences. Let's next add species as a colour in the ggpairs plot.
+
+```{r message = FALSE, warning = FALSE}
+penguins %>% select(bill_length_mm,bill_depth_mm,flipper_length_mm,body_mass_g,species) %>% ggpairs(aes(colour = species))
+```
+
+That changed things dramatically. Comment below on three things revealed by this ggpairs plot that could not be inferred from the previous version.
+
+```{r eval=FALSE}
+# (1)Solves a problem that would have required a lot of code to solve the plot creating
+# (2)Multiple charts can be displayed in one chart, making it easier to compare data
+# (3)A more intuitive way to determine the correlation between the data and plots by showing the corresponding pairwise correlations.
+```
+
+Now create a similar plot, except with sex in place of species. This time, modify the transparency of the points by adding "alpha = 0.4" to the aesthetic. And don't forget to filter out the NA values.
+
+```{r message = FALSE, warning = FALSE}
+penguins %>%filter(!(is.na(sex)))%>% select(bill_length_mm,bill_depth_mm,flipper_length_mm,body_mass_g,sex) %>% ggpairs(aes(colour = sex,alpha= .4))
+
+```
+
+## Final Thoughts
+
+The one aspect of the penguin data that we have not yet considered is year. For completeness, and maybe just for fun, let's use facet_grid to investigate the combined effect of year, species and sex on flipper length.
+
+```{r}
+penguins %>% filter(!(is.na(sex))) %>% mutate(year = as.factor(year)) %>% ggplot(mapping = aes(x = species,y=flipper_length_mm, colour=species)) + geom_boxplot() + 
+  geom_jitter(width = 0.2, height = 0, alpha = 0.4) + facet_grid(sex ~ year) + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+To check your understanding of ggplot commands, in the block below add comments explaining each line of the code used to make the previous plot. As examples, the first and last have been provided already.
+
+```{r eval=FALSE}
+# Start with the tibble containing the data
+penguins %>%
+# delete the NA data in sex column
+filter(!(is.na(sex))) %>% 
+# add the year as a factor into the tibble
+mutate(year = as.factor(year)) %>% 
+# create the ggplot and aesthetic xlim and ylim and add species as color 
+ggplot(mapping = aes(x = species,y = flipper_length_mm, colour=species)) + 
+# add the boxplot 
+geom_boxplot() + 
+# separate the points in plot
+geom_jitter(width = 0.2, height = 0, alpha = 0.4) + 
+# use the facet_grid() to demonstrate the effect of sex and year on flipper_length_mm
+facet_grid(sex ~ year) + 
+# Remove the annotations on the x axis
+theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())
+```
+
+## Extension
+
+Suppose that you were given measurements of a penguin and asked to identify its species. Among the four measurements -- bill length, bill depth, flipper length, and body mass -- which one would be most informative? Which one would be least informative? If you could choose two of the four measurements to help you guess the species, which would they be, and why?
+
+```{r eval=FALSE}
+# The most informative measyrement is flipper length, there is obvious difference among three species in theboxplot. The least informative measurement is the body mass, there is no difference in species except Gentoo.
+# I think I would like to choose the bill depth and flipper length, from the result of filpper length, Gentoo could be identified and combined with the result of bill depth, which shows the difference between Adelie and Chinstrap.
+```
+
+Most of the plots above are visual representations of linear models. Add code blocks to run the linear models that correspond to each such plot, and compare the results to your qualitative observations.
+
+```{r message = FALSE, warning = FALSE}
+penguins %>% select(bill_depth_mm,flipper_length_mm,species) %>% ggpairs(aes(colour = species))
+```
+
+

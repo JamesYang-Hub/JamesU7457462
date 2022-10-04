@@ -1,0 +1,118 @@
+---
+title: "biology 1 EDA my assignment 01"
+author: "201900700284 Yang Sihao"
+date: "2021/4/19"
+output: html_document
+---
+# hypothesis
+null hypothesis: the yeast don't use photoreaction process to repair the pyrimidine dimer mutations.
+alternative hypothesis:the yeast use photoreaction process to repair the pyrimidine dimer mutations.
+## load the csv
+```{r}
+y.kill <- read.csv("yeast_uv_kill_curve.csv", stringsAsFactors = T)
+```
+
+Create boxplot 
+```{r}
+boxplot(cell_count ~ dilution, data = y.kill, col = c("red", "orange"))
+```
+
+Create a scatter plot
+```{r}
+plot(cell_count ~ exposure_time, data = y.kill, pch = 20, cex = 1.5, col = dilution)
+```
+
+Because of the number of 1/10, so we choose 1/100
+```{r}
+y.kill.100 <- subset(y.kill, dilution == "1/100")
+# plot 
+plot(cell_count ~ exposure_time, data = y.kill.100, pch = 20, col = "steelblue", ylim= c(0, 200))
+```
+
+We can fit a regression line:
+```{r}
+y.kill.100.lm <- lm(cell_count ~ exposure_time, data = y.kill.100)
+```
+
+Plot adding the mean values for each time point:
+```{r}
+plot(cell_count ~ exposure_time, data = y.kill.100, pch = 20, col = "steelblue", bty = "n", xlim= c(0, 3), ylim= c(0, 200))
+abline(y.kill.100.lm, col = "goldenrod1", lwd = 2)
+
+y.kill.100.mean <- aggregate(cell_count ~ exposure_time, data = y.kill.100, mean)
+points(y.kill.100.mean, pch = 18, col = "firebrick", cex = 1.5)
+```
+
+We rotate our plot: The x-axis to become the y and the y to become the x-axis.
+
+```{r}
+y.kill.100.lm <- lm(exposure_time ~ cell_count, data = y.kill.100)
+
+plot(exposure_time ~ cell_count, data = y.kill.100, pch = 20, col = "steelblue", bty = "n", ylim = c(0, 3), xlim = c(0, 200))
+abline(y.kill.100.lm, col = "goldenrod1", lwd = 2)
+points(y.kill.100.mean$cell_count, y.kill.100.mean$exposure_time, pch = 18, col = "firebrick", cex = 1.5)
+```
+
+Get the LD50:
+```{r}
+y.kill.100.mid <- (max(y.kill.100.mean) - min(y.kill.100.mean)) / 2
+
+y.kill.100.ld50 <- predict(y.kill.100.lm, data.frame(cell_count = y.kill.100.mid))
+paste("UV-C LD50 exposure time is:", round(y.kill.100.ld50, 1))
+```
+
+# Data analysis
+
+Read the experiment data:
+```{r}
+rm(list = ls())
+y <- read.csv("yeast_uv_irradiation.csv", stringsAsFactors = T)
+```
+
+ANOVE and TurkeyHSD
+```{r}
+y.aov <- aov(cell_count ~ treatment, data = y)
+summary(y.aov)
+TukeyHSD(y.aov)
+```
+There is look no difference, should NOT jump in data anlysis
+
+```{r}
+boxplot(cell_count ~ treatment, data = y)
+```
+
+We have extreme outliers in our data
+```{r}
+palette(c("blue", "red", "darkgreen"))
+plot(cell_count ~ plate, data = y, col = treatment, pch = 20, cex = 1.5)
+legend("topright", levels(y$treatment), pch = 20, col = 1:nlevels(y$treatment))
+```
+
+We have no other choice but to remove these outliers from our analysis.
+```{r}
+y.fix <- subset(y, cell_count < 250)
+```
+
+Create a boxplot:
+```{r}
+boxplot(cell_count ~ treatment, data = y.fix)
+```
+
+Show the scatter plot:
+```{r}
+plot(cell_count ~ plate, data = y.fix, col = treatment, pch = 20, cex = 1.5)
+legend("topright", levels(y$treatment), pch = 20, col = 1:nlevels(y$treatment))
+```
+
+The statisitical analysis:
+```{r}
+y.fix.aov <- aov(cell_count ~ treatment, data = y.fix)
+summary(y.fix.aov)
+TukeyHSD(y.fix.aov)
+```
+
+```{r}
+plot(TukeyHSD(y.fix.aov), col = "red")
+```
+
+

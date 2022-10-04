@@ -1,0 +1,31 @@
+plate,treatment,cell_count
+1,nonirradiated,77
+2,nonirradiated,106
+3,nonirradiated,103
+4,nonirradiated,92
+5,nonirradiated,81
+6,nonirradiated,126
+7,nonirradiated,118
+8,nonirradiated,91
+9,nonirradiated,646
+10,nonirradiated,637
+11,irradiated dark,80
+12,irradiated dark,76
+13,irradiated dark,74
+14,irradiated dark,72
+15,irradiated dark,75
+16,irradiated dark,63
+17,irradiated dark,70
+18,irradiated dark,67
+19,irradiated dark,384
+20,irradiated dark,402
+21,irradiated light,88
+22,irradiated light,104
+23,irradiated light,80
+24,irradiated light,94
+25,irradiated light,98
+26,irradiated light,89
+27,irradiated light,77
+28,irradiated light,78
+29,irradiated light,440
+30,irradiated light,423

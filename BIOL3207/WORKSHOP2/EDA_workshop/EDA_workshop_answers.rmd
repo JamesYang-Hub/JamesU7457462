@@ -1,0 +1,96 @@
+---
+title: "EDA_workshop_answers"
+author: "u7457462"
+date: '2022-08-05'
+output: 
+html_document:
+        toc: true
+        toc_depth: 4
+        theme: cosmo
+        number_sections: false
+        toc_float: true
+        highlight: pygments
+---
+
+
+# Task 1: Loading the data
+```{r message=FALSE}
+
+library(readr)
+data <- read_csv("raw_data/data.csv")
+View(data)
+```
+
+```{r message=FALSE}
+library(tidyverse)
+```
+
+
+# Task 2: Null Hypothesis Significance Testing
+### the Null Hypothesis is that there is no statistically significant in the average number of steps taken by males and females, the alternative Hypothesis is that there is a statistically significant difference in the average number of steps taken by males and females
+### the Null Hypthesis is that there is no a negative correlation between the number of steps and the BMI for females, the alternative there is a negative correlation between the number of steps and the BMI for females
+
+```{r}
+# calculate the mean of male steps
+male_steps<- data[data$sex=="male",]
+female_steps<- data[data$sex=="female",]
+
+
+male_steps_mean= male_steps%>%summarise(m=mean(steps))
+female_steps_mean= female_steps%>%summarise(m=mean(steps))
+female_steps_mean
+male_steps_mean
+# tandard deviation of number of steps taken by males and females
+sd(male_steps$steps)
+sd(female_steps$steps)
+```
+
+```{r}
+# determine whether the data conform to normal distribution
+shapiro.test(female_steps$steps)
+shapiro.test(male_steps$steps)
+# use t test to compare the statistically significance between two groups
+t.test(female_steps$steps,male_steps$steps)
+
+# the p-value<0.05 Indicates that the mean values of the two groups of steps are significantly different. reject the Null hypothesis, accept the alternative hypothesis.
+
+# the effect size is the difference of female and male, the effect size confidence intervals is -1444.3903~ -800.9513, the p-value is 1.055e-11, and the exact test I used is t.test.
+```
+## A sign in a zoo: There is a discount for women because women walk less than men!!
+
+```{r}
+cor.test(female_steps$bmi,female_steps$steps, use = "everythings",
+    method = c("pearson"))
+# the effect size is the difference of BMI in female , the effect size confidence intervals is -0.3695032~ -0.2528646, the p-value is 2.2e-16, and the exact test I used is Pearson's product-moment correlation.
+
+# the p-value<0.05 Indicates that the mean values of the two groups of steps are significantly different. reject the Null hypothesis, accept the alternative hypothesis. the steps are negative correlation with BMI in female.
+```
+
+```{r}
+y <- female_steps$bmi
+x <- female_steps$steps
+plot(x, y, main = "correlation between steps and bmi",
+     xlab = "bmi", ylab = "steps",
+     pch = 88,col=female_steps$steps, frame = T)
+```
+
+
+
+# Task 3: Exploratory Data Analysis
+
+```{r}
+ggplot(female_steps, aes(bmi)) +
+  geom_histogram()
+```
+
+
+```{r}
+?ggplot
+```
+
+
+```{r}
+ggplot(female_steps, aes(x=steps,y=bmi))+geom_line()+labs(x = "steps", y = "BMI") 
+```
+
+

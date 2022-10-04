@@ -1,0 +1,216 @@
+---
+title: "Statistical Inference in Biology Assignment 3"
+author: "201900700284 Yang Sihao"
+date: "2021/4/4"
+output: html_document
+---
+
+# Part 1
+#  The Null Hypothesis
+## 1、Stickleback fish occurs with equal probability through all areas of a pond
+## 2、Patients don't change in mean body mass during a hospital stay
+## 3、The amount of rainfall per day in a rainforest haven a normal distribution
+## 4、On average males and females weighs the same in bald eagles
+## 5、Cats have the same strength in their dominant front paw (usually the right) than in their other front paw (usually the left)
+
+# Part 2
+# 1、The Null and the alternative hypotheses.
+## Null hypotheses: The nonpathogenic gut microbes don't trigger onset of EAE
+## Alternative hypotheses: The nonpathogenic gut microbes trigger onset of EAE
+
+
+# 2、Present the data.
+## Load the data.
+```{r}
+eae.df <- read.csv("eae.csv", stringsAsFactors = T)
+eae.df
+```
+
+## Create the boxplot.
+```{r}
+boxplot(autoreactive~group,data = eae.df,col=c("lightgreen", "tomato4"))
+```
+## Create two vector of "GF" and "SPF".
+```{r}
+GF<-eae.df$autoreactive[eae.df$group=="GF"]
+SPF<-eae.df$autoreactive[eae.df$group=="SPF"]
+```
+
+## Create the histogram.
+```{r}
+hist(eae.df$autoreactive,col = "goldenrod1",breaks = 0:20)
+```
+
+```{r}
+par(mfrow = c(2, 1))
+hist(GF, col = "goldenrod1", breaks = 0:20, freq = F)
+hist(SPF, col = "firebrick", breaks = 0:20, freq = F)
+```
+
+
+
+# 3、Visually and formally assess normality of the data.
+## Calculate the min、max, and Create the normality of "GF" and "SPF"
+```{r}
+autoreactive.min<-min(eae.df$autoreactive)
+autoreactive.max<-max(eae.df$autoreactive)
+autoreactive.range<-seq(from=autoreactive.min,to=autoreactive.max,by=0.1)
+
+GF.norm<-dnorm(autoreactive.range,mean = mean(GF),sd=sd(GF))
+SPF.norm<-dnorm(autoreactive.range,mean = mean(SPF),sd=sd(SPF))
+```
+## Create the histogram with Norm lines.
+```{r}
+hist(GF, col = "goldenrod1", breaks = 0:20, freq = F, main = "EAE", xlab = "autoreactive")
+hist(SPF, col = "firebrick", breaks = 0:20, freq = F, add = T)
+lines(autoreactive.range, GF.norm, col = "goldenrod4", lwd = 2,)
+lines(autoreactive.range, SPF.norm, col = "firebrick4", lwd = 2,)
+legend("topleft", legend = c("GF", "SPF"), col = c("goldenrod1", "firebrick"), lty = 1, lwd = 5, bty = "n")
+```
+## The data seems to not fit normal distribution.
+
+## Create the QQ plot for GF.
+```{r}
+qqnorm(GF, main = "Normal Q-Q Plot for the GF Data")
+qqline(GF)
+```
+
+## Create the QQ plot for SPF.
+```{r}
+qqnorm(SPF, main = "Normal Q-Q Plot for the SPF Data")
+qqline(SPF)
+```
+## Visually, our data doesn't fit normal distribution  in both groups.
+ 
+## Use the shapiro test.
+```{r}
+shapiro.test(GF)
+shapiro.test(SPF)
+```
+
+# 4、Perform statistical tests：
+## Use the t-test.
+```{r}
+eae.t <- t.test(autoreactive ~ group, data = eae.df, alternative = "two.sided", var.equal = T)
+eae.t
+```
+## The p-value from the t-test is 0.04789.
+
+## Use the welch t-test.
+```{r}
+t.test(autoreactive ~ group, data = eae.df)
+```
+## The p-value from the t-test is 0.05346. 
+
+## Calculate the mean difference between the group:
+```{r}
+eae.mean <- mean(SPF) - mean(GF)
+eae.mean
+```
+
+## A vector to store the 10,000 permutations. Lets call it perm and initialize as empty numerical:
+```{r}
+perm <- double(0)
+```
+
+```{r}
+p <- sample(eae.df$autoreactive)
+p.GF <- p[1:length(GF)]
+p.SPF <- p[length(GF):length(p)]
+p.GF
+p.SPF
+```
+
+## The mean difference
+```{r}
+p.mu <- mean(p.SPF) - mean(p.GF)
+p.mu
+```
+
+
+##  Run this permutation 10,000 times and collect the 10,000 outcomes:
+```{r}
+N <- 10e3 
+perm <- double(0)
+for(i in 1:N){
+  p <- sample(eae.df$autoreactive,length(eae.df$autoreactive),replace = F)
+ p.GF <- p[1:length(GF)]
+ p.SPF <- p[(length(GF)+1):length(p)]
+ p.mu <- mean(p.GF) - mean(p.SPF)
+ perm <- c(perm, p.mu)
+}
+```
+
+## Calculate the absolute value of the observed mean:
+```{r}
+eae.mean.abs <- abs(eae.mean)
+eae.mean.abs
+```
+
+## The more extreme means 
+```{r}
+perm.sig <- perm[perm < -eae.mean.abs | perm > eae.mean.abs]
+perm.sig.n <- length(perm.sig)
+perm.sig.n
+```
+
+## We will also find the not extreme means:
+```{r}
+perm.nsig <- perm[!(perm < -eae.mean.abs | perm > eae.mean.abs)]
+perm.nsig.n <- length(perm.nsig)
+perm.nsig.n
+```
+
+## A quick assertion check:
+```{r}
+perm.nsig.n + perm.sig.n == N
+```
+
+## Now we can calculate the p-value as a proportion.
+```{r}
+p.pval <- perm.sig.n / length(perm)
+p.pval
+```
+## The p-value from the Permutation test is  0.0425.
+
+## Create the histogram.
+## The significant simulations.
+```{r}
+hist(perm.sig, breaks = -20:20, col = "red", ylim =c(0,150 ))
+```
+## The not significant simulations.
+```{r}
+hist(perm.nsig, breaks = -20:20, col = "white",ylim = c(0,1500))
+```
+
+## Add the annotations.
+```{r}
+hist(perm.nsig, breaks = -20:20, col = "white", main = "", xlab = "Difference in autoreactive to nonpathogenic gut microbes from randomized data", ylim = c(0,1500))
+hist(perm.sig, breaks = -20:20, col = "red", add = T)
+
+#Two vertical lines at +/- eae.mean
+abline(v = -round(eae.mean.abs, 0))
+abline(v = round(eae.mean.abs, 0))
+
+#Two labels with the +/- eae.mean
+text(-round(eae.mean.abs, 1) - 4, 300, sprintf('%.1f', -eae.mean.abs))
+text(round(eae.mean.abs, 1) + 4, 300, sprintf('%.1f', eae.mean.abs))
+```
+
+# 5、Description of my results.
+## 1. Yes.The boxplot is well suited to present the difference of data between GF and SPF.
+## 2. Maybe not. Though the histogram could show the data directly, it is hard to find some difference between GF and SPF.
+## 3."SPF” is，“GF” is not. The QQ plot and Shapiro test, the data of SPF is fitted the normal line and p-value >alpha=0.05, the data of GF doesn't fit and its p-value <alpha=0.05.
+## 4.Welch t-test can be selected when the variances of the two groups are not equal. t-test is for normal distribution data with unknown population standard deviation σ.
+## 5.Actually no. The p-value of data is less than alpha =0.05 and the variances of the two groups are not equal because the Welch t-test worked.
+## 6.Yes, the p-value of data is more than alpha =0.05 and the variances of the two groups are not equal.
+## 7.Yes, the welch t-test does show the p-value that is less than alpha=0.05 and Permutation test do the same.
+
+# 6、Conclusion
+## This research is to explore whether the nonpathogenic gut microbes trigger onset of EAE or not.
+## First, I create some plots to show the difference between GF and SPF. Add some normal lines into the histogram and QQ plot to determine whether the data fit normal distribution. Then, I ues the t-test、 Welch t-test and Permutation test for the p-value and determine the difference of GF and SPF.Finally, I draw the histogram and show the findlings.
+## The p-value of t-test is 0.04789, the p-value of Welch t-test is 0.05346. The p-value of Permutation test is  0.0425.The Permutation test is the best because it is especially suitable for random arrangement of sample data and small sample data with unknown population distribution.
+## Given the p-value is less than alpha=0.05, then we reject the Null hypotheses and accept the alternative hypotheses.
+## Therefore, the answer for research question is The nonpathogenic gut microbes trigger onset of EAE. The EAE could be initiated by nonpathogenic microbes living in the gut.
+## The sample size is not large enough, and the results obtained are not enough to support the relevant content. Moreover, in this study, relevant influencing factors can still be tested by adding corresponding experimental groups.
+

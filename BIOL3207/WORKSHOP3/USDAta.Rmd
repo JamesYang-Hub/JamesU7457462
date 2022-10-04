@@ -1,0 +1,132 @@
+---
+title: "Untitled"
+author: "201900700284 Yang Sihao"
+date: "2022-08-12"
+output: html_document
+---
+
+```{r}
+install.packages("GGally")
+```
+
+```{r}
+library(readr)
+USData2020 <- read_csv("~/Rstudio Project/WORKSHOP3/USData2020.csv/USData2020.csv")
+View(USData2020)
+
+as.data.frame(USData2020)
+
+sample_UScountries<- USData2020[sample(nrow(USData2020),100),]
+
+mean_sample_UScounties<- mean(sample_UScountries$Median_Income_2020)
+
+mean_sample_UScounties
+
+n_reps=10000
+
+for (i in 1:n_reps) {
+  sample_UScountries<- USData2020[sample(nrow(USData2020),100),]
+  mean_sample_UScounties[i]<- mean(sample_UScountries$Median_Income_2020)
+  
+}
+
+hist(mean_sample_UScounties)
+
+hist(USData2020$Median_Income_2020)
+
+
+```
+
+```{r}
+library(tidyverse)
+library(GGally)
+UScounties <- read_csv("~/Rstudio Project/WORKSHOP3/USData2020.csv/USData2020.csv")
+UScounties %>% mutate(Continuum_code = as.factor(Continuum_code),Urban_influence_code = as.factor(Urban_influence_code),Metro = as.factor(Metro)) %>% select(Continuum_code,Urban_influence_code,Metro,Median_Income_2020) %>% ggpairs(aes(colour=Continuum_code,alpha = 0.5))
+
+```
+# This is a script to simulate from our example population some number of time
+# the ex.population has 54 blue and 6 red 
+# For some reasons, I will be sampleing 24 balls over and pver again
+# The number of times intotal is N_reps=10000
+
+
+
+```{r}
+# Create the population
+rep("red",6)
+rep("blue",54)
+c(rep("red",6),rep("blue",54))
+
+pop<-c(rep("red",6),rep("blue",54))
+
+my_sample<- sample(pop,24)
+my_sample
+
+
+# count the "red" sample
+my_estimate<- sum(my_sample=="red")
+my_estimate
+
+# forloop to cum the number
+tot<- 0
+for (i in 10) {
+  tot<- tot+i
+  
+}
+tot
+
+# Okay, enough preliminaries.Lets create sampling distribution
+# Set the number of reps
+n_reps<- 10000
+# Create a vector/ to store theresluts
+samp_dist<-rep(0,n_reps)
+
+
+# Exercise: Fill out samp_dist with the samples taken from the pop 
+
+
+for (i in 1:n_reps) {
+
+  my_sample<- sample(pop,24,replace = FALSE)
+  samp_dist[i] <-sum(my_sample=="red")
+  
+  }
+hist(samp_dist, breaks = 40, )
+
+library(tibble)
+# Let's next store this intibble
+samp_dist_tibble<-tibble(samp_dist)
+str(samp_dist_tibble)
+
+install.packages("ggplot2")
+library(ggplot2)
+# Creat the histogram in ggplot
+ggplot(data=samp_dist_tibble,aes(x=samp_dist))+geom_histogram()
+
+# Let's switch to the fraction red instead of count of red
+
+# Let's define the sample size as a varible
+n_sample=24
+for (i in 1:n_reps) {
+
+  my_sample<- sample(pop,n_sample,replace = FALSE )
+  samp_dist[i] <-sum(my_sample=="red")/n_sample
+  
+  }
+hist(samp_dist, breaks = 40, )
+ 
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
