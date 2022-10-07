@@ -272,6 +272,8 @@ aov1
 aov1$sum_sq[2]/aov1$df[2]
 aov1$df[2]
 aov1$df[1]
+aov1$sum_sq[2]
+summary(lm1)
 ```
 
 The F value in the anova table is effectively a signal-to-noise ratio. The signal in this case is the Mean Sq for sex divided by its corresponding degrees of freedom. The noise is the Residual Mean Sq divided by its corresponding degrees of freedom. In those terms, the F value is then signal/noise. When the linear modelling assumptions are satisfied, under the null hypothesis that sex has no effect, the F value follows an F distribution on `r aov1$df[1]` and `r aov1$df[2]` degrees of freedom.
