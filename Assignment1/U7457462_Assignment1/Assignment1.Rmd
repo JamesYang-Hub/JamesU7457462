@@ -1,0 +1,239 @@
+---
+title: "Assignment1"
+author: "U7457462_Sihao_Yang"
+date: "2022-10-06"
+output: html_document
+---
+
+# Data Wrangling
+The data from a fictional ecological study. The research was conducted over a ten year period (2011-2020) across five widely dispersed field sites. Individual animals from two sister species (A fictus and A mendacium) were observed, and data was recorded on their size (weight and height) and range. 
+
+1. The roaming range of the animal                      (in square km)
+2. The weight of the animal                             (in kg)
+3. The height of the animal                             (in cm)
+4. The species of the animal                            (A fictus or A mendacium)
+5. The year that the measurements were taken            (2011-2020)
+
+
+
+## Libraries and Packages
+
+Load in the corresponding libraries, tidyverse as well as readxl.
+```{r echo=FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+## Import CSV files
+The data is in an Excel file (“BIOL3207_Assignment1_DataFile.xlsx”) in which each of the five field sites is a separate sheet. Each row represents measurements from a single animal.
+```{r echo=FALSE}
+meta_data_file1 <- "data/BIOL3207_Assignment1_DataFile.xlsx"
+meta_data_file <- read_xlsx(meta_data_file1,skip=7)#skip the first seven lines to read the data table
+meta_data_file
+```
+
+## Motified the CSV files
+Get the names of the sheets.
+```{r}
+sample_ids <- excel_sheets(meta_data_file1)
+sample_ids #"Field Site 1" "Field Site 2" "Field Site 3" "Field Site 4" "Field Site 5"
+```
+Assign the spreadsheet into different variables and use the function `do.call()` to make the variable assignment. Import the remaining sheets into variables using the same naming convention.
+```{r}
+string <- c("Field Site 1","Field Site 2","Field Site 3","Field Site 4","Field Site 5")
+string <- trimws(gsub("\\s+", "_", string))# the elements in string:"Field_Site_1" "Field_Site_2" "Field_Site_3" "Field_Site_4" "Field_Site_5"
+
+# Import the remaining sheets into variables
+do.call("<-",list(paste(string[1],"_assign",sep = ""),read_xlsx(meta_data_file1,sheet=sample_ids[1],skip=7)))
+# Loop
+for (i in c(2,3,4,5)) {
+  
+  do.call("<-",list(paste(string[i],"_assign",sep = ""),read_xlsx(meta_data_file1,sheet=sample_ids[i])))
+}
+
+```
+
+
+Create a new string as desired, which could be used as variable names
+```{r}
+string2 <- str_c(string,"_assign")# create a list of sheet names
+string2# variable names: "Field_Site_1_assign" "Field_Site_2_assign" "Field_Site_3_assign" "Field_Site_4_assign" "Field_Site_5_assign"
+```
+Add a column of Sites, make sure one tibble includes all of the data, which Sites as a variable in a new column.
+```{r}
+# Create a New string of 1,2,3,4,5
+String3 <- c(1,2,3,4,5)
+#add column to all data
+Field_Site_1_assign <- add_column(Field_Site_1_assign,Sites=String3[1])
+Field_Site_2_assign <- add_column(Field_Site_2_assign,Sites=String3[2])
+Field_Site_3_assign <- add_column(Field_Site_3_assign,Sites=String3[3])
+Field_Site_4_assign <- add_column(Field_Site_4_assign,Sites=String3[4])
+Field_Site_5_assign <- add_column(Field_Site_5_assign,Sites=String3[5])
+
+```
+## Create tidy tibble containing all of the data and rename all of columns
+```{r}
+assign <- bind_rows(Field_Site_1_assign,Field_Site_2_assign,Field_Site_3_assign,Field_Site_4_assign,Field_Site_5_assign)# combine all of data
+names(assign) <- c('Range','Weight','Height','Species','Year','Sites') # rename the column names
+str(assign)
+
+```
+
+
+### Identify and address problematic entries. 
+```{r}
+assign <- assign %>% na.omit() # get rid of all NA entries/ Omit all unnecessary entries
+assign <- assign %>% group_by(Sites,Year,Species)# group by Species,Sample_id and Year
+
+# Find out the mistake of spelling  
+assign$Species %>% unique() # "A fictus"    "A mendacium" "A Mendacium"
+assign$Year %>% unique() # 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2217
+
+# Clear the wrong data
+assign <- assign %>% filter(Weight>0) %>% mutate(Species = stringr::str_replace(Species,"A Mendacium","A mendacium"),Year = stringr::str_replace(Year,"2217","2017"))
+
+# check the motified spelling
+assign$Year %>% unique() #"2011" "2012" "2013" "2014" "2015" "2016" "2017" "2018" "2019" "2020"
+assign$Species %>% unique() #"A fictus"    "A mendacium"
+
+```
+### Convert some data into factors 
+Make some variables transformed into factors, it could specify the process of analysis.
+```{r}
+# Convert the Years into factors
+assign$Year <- factor(assign$Year, levels = c("2011", "2012", "2013", "2014", "2015", "2016", "2017" ,"2018", "2019", "2020"))
+
+# Convert Sample_id into factors
+assign$Sites <- factor(assign$Sites, levels = c("1", "2", "3", "4", "5"))
+
+# Convert the Species into factors
+assign$Species <- factor(assign$Species, levels = c('A fictus','A mendacium'))
+
+```
+
+
+## Writing of the curated data tibble to a csv file
+```{r}
+library(writexl)
+writexl::write_xlsx(assign, path  = "data/u7457462_BIOL3207_Assignment1_DataFile.xlsx") # export the excel file
+```
+
+
+
+# Data analysis
+## Create a plot to visualise many relationships at once. Library ggpairs in the package GGally.
+
+Here are 6 variables, from this picture, I could get some information about the correlation between two variables. I could not determine whether it is correct or not, so I try to figure out what patterns and relationships in the data. Actually, I do a lot of guessing and work in analyzing the linear model one by one. Most of them don't show the correlation, so I just plot those specific relationships I find. 
+```{r Fig1,fig.cap="fig1", message = FALSE, warning = FALSE}
+library(GGally)
+assign %>% select(Species,Sites,Year,Range,Weight,Height) %>% ggpairs(aes(col= Species))
+```
+
+From the ggpairs plot, it is easy to see that the correlation higher than 0.1 is betwwen Range and weight, range and .group, weight and .group. So I am gonna to analyse what patterns do they have.
+
+## Weight and Sites
+Because I know that Weight have the highest correlation with other variable from the `ggpairs`, I try to simulate the linear model using `lm()` to determine the relationship betwwen Weight and other variables. Finally, I get the highest coefficient of determination(Multiple R-Squared) between Weight and Sites, Multiple R-Squared is a measurment of how well this model fits to the data. The value is 0.928, obviously, the Weight and Sites has a strong relationship.\@ref(fig:Fig1)
+
+### Limear model analysis
+Use the `lm()` to simulate the linear model ,`emmeans()` to get the estimated means for each class. and use `summary()` to get the key components.
+```{r}
+# The correlation of Weight and Sites
+library(emmeans)
+lm_WS_assign <- lm(Weight~Sites,assign)
+emmeans(lm_WS_assign,~Sites)
+summary(lm_WS_assign)
+```
+Conclusion: The Multiple R-squared equal 0.928, that shows that the model can explain 92.8% of the variance in body weight, which is also the correlation coefficient between actual and predicted values. From the emmean values, the Weight would rise in different Sites in order from Sites1 to Sites5.
+
+### Create ggplots
+```{r Fig2,fig.cap="fig2",message = FALSE, warning = FALSE}
+# Calculate all means of Weight in Differnt Sites
+Sites_specific_means <- assign %>% group_by(Sites) %>% summarise(val = mean(Weight)) %>% pull(val)
+assign %>%  ggplot(aes(y=Weight,x=Sites,colour=Sites)) +facet_wrap(~Year,nrow = 1)+geom_boxplot() + geom_hline(yintercept=Sites_specific_means[1],colour="red") + geom_hline(yintercept=Sites_specific_means[2],colour="#FFBF00FF")+ geom_hline(yintercept=Sites_specific_means[3],colour="Green")+ geom_hline(yintercept=Sites_specific_means[4],colour="skyBlue")+ geom_hline(yintercept=Sites_specific_means[5],colour="purple")# add a mean line for every mean values to indicate the changes among Sites
+```
+For this linear model, it is not perfect, I first try to add Year: Sites as an interaction item, and it will get a higher Multiple R-squared. But I use the other functions that show Year is not very important, so I delete that to make it tidy.\@ref(fig:Fig2)
+
+
+## Range, Weight and Sites
+For this finding, firstly I make a boxplot of Range and Sites, which shows the rise trend of Range in order from Sites1 to Sites5, however, there is extreme situation for two Species, only *A mendacium* have some differences among Sites.\@ref(fig:Fig3)
+
+### Create the exploratory boxplot
+Use the ggplot to create the boxplot between Range and Sites, Use `facet_wrap()` to show the difference between Species. 
+```{r Fig3,fig.cap="fig3", message = FALSE, warning = FALSE}
+# The range distribution in different Sites 
+ggplot(assign,aes(y=Range,x=Sites,col=Sites))+facet_wrap(~Species,nrow = 1)+geom_boxplot()# No difference in A fictus, some differences in A mendacium
+```
+
+To figure out whether the Species *A fictus* fit the linear model, I divide the data into two single-Specie datasets, and use `lm()` to calculate the Multiple R-squared values. The result is that Species *A fictus* could not fit the linear model with Sites. After calculating the Multiple R-squared values, I find the value of Species *A mendacium* is 0.257, I dicide to only analyse the pattern of Species *A mendacium* with Weight.
+```{r}
+# Separate the whole data into two single Specie datasets
+assign_Species1 <- assign %>% filter(Species=='A fictus') 
+assign_Species2 <- assign %>% filter(Species=='A mendacium') 
+
+lm_RS_Species1<- lm(Range~Sites,assign_Species1)# Multiple R-squared:  0.00314
+lm_RS_Species2<- lm(Range~Sites,assign_Species2)# Multiple R-squared:  0.257
+```
+### Data analysis and ggplot
+After trying one by one, the linear model(Range = a*Sites + b*Weight + c) would be the fittest(Multiple R-squared:  0.424), and to figure out what the pattern of Species *A mendacium*, I use `ggplot` to draw about the trend line. The lines show that there is a Negative relationship between Range and Weight in different Sites.
+\@ref(fig:Fig4)
+Use `lm()` to simulate the linear model of Species *A mendacium* , and use 'summary()' to get the key components. 
+```{r}
+# Only choose the Species A mendacium to analyse
+lm_RS_Species2<- lm(Range~Sites+Weight,assign_Species2)
+summary(lm_RS_Species2) # conclusion: there are some differences in A mendacium at different Sites
+```
+
+
+Use `ggplot` to draw the lines examine how Range depends on Weights. Use `facet_wrap ` to make an informative plot.
+```{r Fig4,fig.cap="fig4",message = FALSE, warning = FALSE}
+# the relationship between  Range and Ratio of different Species
+assign %>%  ggplot( mapping = aes(x =Weight, y = Range,colour = Sites)) +facet_wrap(~Species)+geom_smooth(method = 'lm')
+# Negative Correlation plot
+```
+
+From the previous plot, it is easy to see that the Species *A mendacium* has a Negative correlation of Weight and Range. I straightforward calculate per correlation of the lines.
+```{r}
+# Calulate all correlations between Range and Weight in Different Sites
+correlations <- c()
+assign_Species2_Sites1 <- assign_Species2 %>% filter(Sites==1) 
+correlations[1] <- cor(assign_Species2_Sites1$Range,
+                    assign_Species2_Sites1$Weight)
+assign_Species2_Sites1 <- assign_Species2 %>% filter(Sites==2) 
+correlations[2] <- cor(assign_Species2_Sites1$Range,
+                    assign_Species2_Sites1$Weight)
+assign_Species2_Sites1 <- assign_Species2 %>% filter(Sites==3) 
+correlations[3] <- cor(assign_Species2_Sites1$Range,
+                    assign_Species2_Sites1$Weight)
+assign_Species2_Sites1 <- assign_Species2 %>% filter(Sites==4) 
+correlations[4] <- cor(assign_Species2_Sites1$Range,
+                    assign_Species2_Sites1$Weight)
+assign_Species2_Sites1 <- assign_Species2 %>% filter(Sites==5) 
+correlations[5] <- cor(assign_Species2_Sites1$Range,
+                    assign_Species2_Sites1$Weight)
+correlations#-0.4229692 -0.4065526 -0.5307098 -0.4483852 -0.5613249
+```
+
+## Height and Species
+About this one, I think the linear model(Range~Species) has a relative low Multiple R-squared value, only about 0.2156. And this is a little overlap with the previous model, which neglect the Species *A fictus*. So I think I should add this linear model(Range~Species) to complete the whole data analysis.\@ref(fig:fig5)
+
+### Create the ggplot
+Use the `ggplot` to make a boxplot about relationship About Range and Species, 
+```{r Fig5,fig.cap='Fig5', message = FALSE, warning = FALSE}
+# the relationship between  Range and Species
+ggplot(assign,aes(y=Range,x=Species,col=Species)) + geom_boxplot()
+```
+
+Use `t.test` and `lm()` to figure out whether there is a significant difference of Range in two Species.
+```{r}
+# divide the Range data by Species and calculate the difference 
+Range_Species_data <- assign %>% pivot_wider(names_from=Species,values_from=Range) 
+range_species1 <- Range_Species_data[5] %>% na.omit()
+range_species2 <- Range_Species_data[6] %>% na.omit()
+t.test(range_species1,range_species2)
+# Make the linear model about Range and Species
+summary(lm(Range~Species,assign))
+```
+
+From the above results, it is easy to reject the null hypothesis which there is no difference Range between two Species, given the P-value <0.05. And the linear model could be suitable given the Multiple R-squared equal 0.2156.
+
+The one aspect of the data that I have not shown in this code is Year yet, not because I forget to consider Year. Actually, I don't find any Linear model could fit well with Year and the other variables. I think the Year is just a covariate, which has no great influence on the experimental results.
