@@ -1,0 +1,105 @@
+---
+title: "poster"
+author: "u7457462"
+date: "2022-10-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+path <-  "data/tabble.xls"
+data <- read_xls(path,skip = 1)
+data
+```
+
+```{r}
+sample_ids <- excel_sheets(path)
+sample_ids
+```
+
+```{r}
+data2 <- read_xls(path,sheet=sample_ids[2],skip=1)
+
+names(data2) <- c('Author','Year','Location','Rainfall','Nutrient','Soil_or_leaf','Sub_canopy_nutrients','N')
+data3 <- data2 %>% select(Rainfall,Nutrient, Soil_or_leaf,Sub_canopy_nutrients,N)
+data3
+```
+
+```{r}
+library(GGally)
+library(knitr)
+```
+```{r}
+data3%>% ggpairs()
+```
+
+
+
+
+```{r}
+pca1 <- prcomp(data3 %>% select(Rainfall, Sub_canopy_nutrients,N), scale = TRUE)
+pca1_scores <- pca1$x %>% as_tibble() 
+pca1
+
+
+
+head(pca1_loadings)
+```
+
+```{r}
+head(pca1_scores)
+```
+```{r}
+summary(pca1)
+pca1_loadings <- round(pca1$rotation,3) %>% as_tibble %>% mutate(names = rownames(pca1$rotation))
+pca1_loadings
+```
+
+```{r}
+Proportion_of_Variance <- c(0.5232, 0.3552, 0.1216)
+```
+
+
+```{r}
+ggplot(pca1_scores, aes(PC1, PC2))+
+geom_point()+
+geom_segment(data = pca1_loadings,
+aes(x = 0, y = 0, xend = PC1, yend = PC2),
+arrow = arrow(),
+colour = "red") +
+ylim(-2,2)+
+annotate("text", x = pca1_loadings$PC1, y = pca1_loadings$PC2,
+label = pca1_loadings$names,
+colour = "red", size = 3,
+vjust = 1, hjust = -0.2) +
+theme_bw()
+```
+```{r}
+pca1_scores1 <- pca1_scores %>% mutate(PC1 = PC1/pca1$sdev[1], PC2 = PC2/pca1$sdev[2], location = data2$Location)
+pca1_scores1
+```
+
+
+
+```{r}
+library(ggplot2)
+xlab<-paste0("PC1(",round(Proportion_of_Variance[1]*100,2),"%)")
+ylab<-paste0("PC2(",round(Proportion_of_Variance[2]*100,2),"%)")
+
+p1<-ggplot(data = pca1_scores1,aes(x=PC1,y=PC2,color=location))+
+stat_ellipse(aes(fill=locaion),
+type ="norm", geom ="polygon",alpha=0.2)+
+geom_point()+labs(x=xlab,y=ylab,color="")+
+guides(fill=F)
+p1
+```
+
+
