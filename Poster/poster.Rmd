@@ -17,6 +17,7 @@ library(readxl)
 ```{r}
 path <-  "data/tabble.xls"
 data <- read_xls(path,skip = 1)
+data <- data %>% na.omit
 data
 ```
 
@@ -50,8 +51,6 @@ pca1_scores <- pca1$x %>% as_tibble()
 pca1
 
 
-
-head(pca1_loadings)
 ```
 
 ```{r}
@@ -83,8 +82,8 @@ vjust = 1, hjust = -0.2) +
 theme_bw()
 ```
 ```{r}
-pca1_scores1 <- pca1_scores %>% mutate(PC1 = PC1/pca1$sdev[1], PC2 = PC2/pca1$sdev[2], location = data2$Location)
-pca1_scores1
+pca1_scores1 <- pca1_scores %>% mutate(PC1 = PC1/pca1$sdev[1], PC2 = PC2/pca1$sdev[2], nutrient = data2$Nutrient)
+pca1_scores1 <- pca1_scores1 %>% na.omit
 ```
 
 
@@ -94,12 +93,47 @@ library(ggplot2)
 xlab<-paste0("PC1(",round(Proportion_of_Variance[1]*100,2),"%)")
 ylab<-paste0("PC2(",round(Proportion_of_Variance[2]*100,2),"%)")
 
-p1<-ggplot(data = pca1_scores1,aes(x=PC1,y=PC2,color=location))+
-stat_ellipse(aes(fill=locaion),
+p1<-ggplot(data = pca1_scores1,aes(x=PC1,y=PC2,color=nutrient))+
+stat_ellipse(aes(fill=nutrient),
 type ="norm", geom ="polygon",alpha=0.2)+
 geom_point()+labs(x=xlab,y=ylab,color="")+
-guides(fill=F)
+guides(fill=F)+geom_segment(data = pca1_loadings,
+aes(x = 0, y = 0, xend = PC1, yend = PC2),
+arrow = arrow(),
+colour = "red")  +annotate("text", x = pca1_loadings$PC1, y = pca1_loadings$PC2,
+label = pca1_loadings$names,
+colour = "red", size = 3,
+vjust = 1, hjust = -0.2)+ theme(panel.background = element_rect(fill = "transparent",colour = NA), panel.grid.minor = element_blank(), panel.grid.major = element_blank(),plot.background = element_rect(fill = "transparent",colour = NA))
 p1
 ```
 
+
+
+```{r}
+data_sample1 <- read_xls(path,sheet=sample_ids[1],skip=1)
+data_sample1 <- data_sample1 %>% na.omit
+data_sample1
+names(data_sample1) <- c('Author','Year','Location','Rainfall','Sub_canopy_biomass','N')
+data_sample2 <- data_sample1 %>% select(Rainfall,Sub_canopy_biomass,N)
+data_sample2
+```
+
+```{r}
+ggplot(data_sample2,aes(x=Rainfall,y =Sub_canopy_biomass ))+geom_point(aes(col=N))+geom_smooth(method = "lm",col="#FF5F00")+geom_hline(yintercept=0,linetype = "dashed")+ theme(panel.background = element_rect(fill = "transparent",colour = NA), panel.grid.minor = element_blank(), panel.grid.major = element_blank(),plot.background = element_rect(fill = "transparent",colour = NA))+ylab("Normalized tree effect")+xlab("Annual rainfall (mm/year)")
+```
+```{r}
+
+data3 <- data2 %>% select(Rainfall,Nutrient, Soil_or_leaf,Sub_canopy_nutrients)
+
+data3 <- tidyr::unite(data3,"Nutrientsite",c("Nutrient","Soil_or_leaf"),sep = "-")
+data3
+```
+
+```{r}
+ggplot(data3,aes(x=Rainfall,y=Sub_canopy_nutrients,shape=Nutrientsite))+geom_point(aes(size=0.2))+geom_hline(yintercept=0,linetype = "dashed")+ theme(panel.background = element_rect(fill = "transparent",colour = NA), panel.grid.minor = element_blank(), panel.grid.major = element_blank(),plot.background = element_rect(fill = "transparent",colour = NA))+ylab("Normalized tree effect")+xlab("Annual rainfall (mm/year)")
+```
+
+```{r}
+ggsave("plot2.png")
+```
 
