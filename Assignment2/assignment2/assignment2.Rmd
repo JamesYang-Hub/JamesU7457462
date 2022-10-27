@@ -20,6 +20,9 @@ library(readr)
 install.packages("pacman", repos = "http://cran.us.r-project.org")
 library(pacman)
 p_load(bookdown, tidyverse, ggforce, flextable, latex2exp, png, magick) # list all the packages 
+
+library(metadat)
+library(metafor)
 ```
 
 ### Import CSV files
@@ -42,13 +45,78 @@ data_Clark
 mean_sd <- list(mean=~mean(.x, na.rm = TRUE), 
   sd = ~sd(.x, na.rm = TRUE)
 )
-data_Clark %>% select(species,treatment,sl,size,activity) %>% group_by(species,treatment,size)%>% summarise(across(where(is.numeric), mean_sd),N=n()) %>% flextable(,col_keys = c("species","treatement","size","sl_mean","sl_sd","activity_mean","activity_sd","N")) %>% add_header_row(, values = c("", "sl","activity",""), colwidths = c(3, 2,2,1)) %>% align(, i = 1, part = "header", align = "center")
+data_Clark_mean_sd <- data_Clark %>% select(species,treatment,sl,size,activity) %>% group_by(species,treatment,size)%>% summarise(across(where(is.numeric), mean_sd),N=n()) 
+data_Clark_mean_sd%>% flextable(,col_keys = c("species","treatement","size","sl_mean","sl_sd","activity_mean","activity_sd","N")) %>% add_header_row(, values = c("", "sl","activity",""), colwidths = c(3, 2,2,1)) %>% align(, i = 1, part = "header", align = "center")
 ```
 
 ## 2.Through coding, merge the summary statistics generated from 1) with the metadata (i.e., clark_paper_data.csv) from Clark et al. (2020).
+### Make the tibble tidy and rename the columns
+```{r}
+
+# calculate mean/SD/N of activity group by treatment
+data_Clark_activity_mean_sd <- data_Clark %>% select(species,treatment,activity) %>% group_by(species,treatment)%>% summarise(across(where(is.numeric), mean_sd),N=n()) 
+# use `pivot_wider()` to separate the activity value of treatment
+data_Clark_activity_mean_sd <- data_Clark_activity_mean_sd %>% pivot_wider(names_from = treatment,values_from =c(activity_mean,activity_sd,N) ) 
+# rename the columns
+names(data_Clark_activity_mean_sd) <-c('Species','oa.mean','ctrl.mean','oa.sd','ctrl.sd','oa.n','ctrl.n')
+data_Clark_activity_mean_sd
+```
+### read the 'ocean_paper_data.csv' and merge with Clark's data
+```{r}
+# read the CSV file
+paper_path <- "./data/clark_paper_data.csv"
+ocean_paper <- read_csv(paper_path)
+# replace NA with '-'
+ocean_paper <- ocean_paper %>% mutate_at('Cue/stimulus type', ~replace(., is.na(.), '-'))
+# merge the tibbles
+Clark_meta_data <- cbind(ocean_paper,data_Clark_activity_mean_sd) 
+```
+
+## 3. Through coding, correctly merge the combined summary statistics and metadata from Clark et al. (2020) (output from 1 & 2) into the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
+```{r}
+# read the file
+ocean_meat_path <- "./data/ocean_meta_data.csv"
+ocean_meat_data <- read_csv(ocean_meat_path)
+# merge with Clark_meata_data
+ocean_meta_data <- rbind(ocean_meat_data,Clark_meta_data) 
+# eliminate some unresonable data
+ocean_meta_data <- ocean_meta_data %>% filter(ctrl.mean>0,oa.mean>0)
+```
+## 4. Correctly calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s `escalc()` function.
+```{r}
+
+lnRR <- metafor::escalc(measure='ROM',n1i = ocean_meta_data$ctrl.n ,n2i=ocean_meta_data$oa.n ,m1i=ocean_meta_data$ctrl.mean ,m2i= ocean_meta_data$oa.mean ,sd1i=ocean_meta_data$ctrl.sd,sd2i=ocean_meta_data$oa.sd,var.names=c("yi","vi"))
+lnRR$vi
+```
+
+## 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s `rma.mv()` function.
+```{r}
+# regular random-effects model using `rma.mv()`
+MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|Study),test="t",data = ocean_meta_data)
+MLMA
+```
+
+## 6.Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
+### Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
+```{r}
+
+```
 
 
 
+
+
+### Measures of heterogeneity in effect size estimates across studies (i.e., I^2 and/or prediction intervals - see predict() function in metafor)
+
+
+```{r}
+
+```
+
+### Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
+```{r}
+
+```
 
 
 
