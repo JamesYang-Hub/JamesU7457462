@@ -95,7 +95,7 @@ lnRR$vi
 ## 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s `rma.mv()` function.
 ```{r}
 # regular random-effects model using `rma.mv()`
-MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|Study),test="t",data = ocean_meta_data)
+MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|`Climate (FishBase)`),test="t",data = ocean_meta_data)
 MLMA
 # estimate：估测的真实效应量
 # zval & pval:p值
@@ -126,9 +126,29 @@ forest(MLMA,,order ="Year(online)")
 ```
 
 
-## Funnel plot for visually assessing the possibility of publication bias.
+## 7. Funnel plot for visually assessing the possibility of publication bias.
 ```{r}
-funnel(MLMA )
+MLMA2 <- metafor::rma.mv(lnRR$yi,lnRR$vi,
+                         random = ~`Year (online)`|`Cue/stimulus type`,
+                         mods = ~`Year (online)`,
+                         test="t",data = ocean_meta_data)
+MLMA2
+
 # 从图来看，图形左右对称性好，因此可能不存在发表偏倚
+```
+
+```{r}
+slemodel(MLMA2)
+funnel(trimfill(MLMA2),lengend = TRUE)
+```
+
+
+```{r}
+MLMA_inverse <- metafor::rma.mv(lnRR$yi,lnRR$vi,
+                         random = list(~1|`Climate (FishBase)`),
+                         mods = ~(1/lnRR$vi),
+                         test="t",data = ocean_meta_data)
+MLMA_inverse
+
 ```
 
