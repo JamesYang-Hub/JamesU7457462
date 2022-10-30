@@ -21,7 +21,7 @@ library(puniform) #Load puniform
 library(metadat)
 library(metafor)
 library(orchaRd)
-library(ggforestplot)
+
 
 ```
 
@@ -52,7 +52,7 @@ data_Clark_mean_sd%>% flextable(,col_keys = c("species","treatement","size","sl_
 
 ## 2.Through coding, merge the summary statistics generated from 1) with the metadata  from *Clark et al. (2020)*.
 ### Make the tibble tidy and rename the columns
-```{r}
+```{r actable, echo=TRUE, eval=TRUE, tab.cap = "actable"}
 # calculate mean/SD/N of activity group by treatment
 data_Clark_activity_mean_sd <- data_Clark %>% select(species,treatment,activity) %>% group_by(species,treatment)%>% summarise(across(where(is.numeric), mean_sd),N=n()) 
 # use `pivot_wider()` to separate the activity value of treatment
@@ -75,7 +75,7 @@ Clark_meta_data <- cbind(ocean_paper,data_Clark_activity_mean_sd)
 
 ## 3. Through coding, correctly merge the combined summary statistics and metadata from *Clark et al. (2020)* (output from 1 & 2) into the larger meta-analysis dataset .
 ### Import and merge the file
-```{r}
+```{r metatable, echo=TRUE, eval=TRUE, tab.cap = "metatable"}
 # read the file
 ocean_meat_path <- "./data/ocean_meta_data.csv"
 ocean_meat_data <- read_csv(ocean_meat_path)
@@ -108,7 +108,7 @@ view(lnRR)# view the lnRR data
 
 ## 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s `rma.mv()` function.
 ### Create the model
-```{r}
+```{r MLMAable, echo=TRUE, eval=TRUE, tab.cap = "MLMAtable"}
 # use `rma.mv()` function with random effect of 'Study' and 'residual'
 MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|Study,~1|residual),test="t",data = ocean_meta_data)
 MLMA
@@ -121,7 +121,7 @@ MLMA
 
 ### Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
 #### Use `predict()` function
-```{r}
+```{r pre1table, echo=TRUE, eval=TRUE, tab.cap = "pre1table"}
 pre1 <- predict(MLMA,digits = 3)
 pre1
 ```
@@ -157,7 +157,7 @@ Overall, we have highly heterogeneous effect size data because sampling variatio
 From the multilevel meta-analytic model we find that only `i2$I2[2]`% of the total variation in effect size estimates is the result of differences between studies.
 
 
-```{r}
+```{r pretable, echo=TRUE, eval=TRUE, tab.cap = "pretable"}
 pre1 <- predict(MLMA)
 pre1
 ```
@@ -193,6 +193,19 @@ metafor::funnel(x = lnRR$yi, vi = lnRR$vi, yaxis = "seinv",
     las = 1, xlab = "Correlation Coefficient (r)", atransf = tanh, legend = TRUE,xlim=c(-6,6),ylim=c(1,125))
 ```
 
+
+
+### Fitting a Multilevel Meta-Regression model to Test and Correct for Publication bias
+
+```{r MLMA2table, echo=TRUE, eval=TRUE, tab.cap = "MLMA2table"}
+MLMA2 <- metafor::rma.mv(lnRR$yi,lnRR$vi,
+                         random = ~Study|residual,
+                         mods = ~`Year (online)`,
+                         test="t",data = ocean_meta_data)
+MLMA2
+
+```
+
 ```{r fun2fig, fig.align='center', fig.cap="fun2fig"}
 
 funnel(MLMA2,xlim=c(-5,5),ylim=c(0,4))
@@ -203,18 +216,9 @@ metafor::funnel(MLMA,refline=0,xlim=c(-2,2),ylim=c(0,1), level=c(90, 95, 99),
 ```
 This plot show us that some studies are lying in the 'significance' contours. From the figure, the figure has good left-right symmetry, so there may be no publication bias. Studies with large sample sizes, distributed at the top of the funnel plot, and concentrated toward the middle.
 
-### Fitting a Multilevel Meta-Regression model to Test and Correct for Publication bias
+
 
 ```{r fun3fig, fig.align='center', fig.cap="fun3fig"}
-MLMA2 <- metafor::rma.mv(lnRR$yi,lnRR$vi,
-                         random = ~Study|residual,
-                         mods = ~`Year (online)`,
-                         test="t",data = ocean_meta_data)
-MLMA2
-
-```
-
-```{r}
 # flip around the funnel plot
 ggplot(lnRR, aes(y = lnRR$yi, x = lnRR$vi)) + geom_point() + geom_smooth(method = lm) +
     labs(y = "Fisher's Z-transformed Correlation Coefficient (Zr)", x = "Sampling Variance of Zr") +
@@ -222,7 +226,7 @@ ggplot(lnRR, aes(y = lnRR$yi, x = lnRR$vi)) + geom_point() + geom_smooth(method 
 ```
 We can see from the linear model fit that there appears to be a clear positive slope where the mean effect size is dragged ‘up’ when the sampling variance is large. This is caused by the excessive heterogeneity. These studies are hard to publish or authors are just less likely to believe them, and therefore not publish them.\@ref(fig:fun3fig)
 
-```{r}
+```{r ranktable, echo=TRUE, eval=TRUE, tab.cap = "ranktable"}
 # Detection of publication bias
 ranktest(MLMA)
 ```
@@ -231,7 +235,7 @@ The rank correlation test detects whether the observed effect size is significan
 
 
 ## 8.Time-lag plot assessing how effect sizes may or may not have changed through time.
-```{r}
+```{r timelagfig, fig.align='center', fig.cap="timelagfig"}
 ggplot(lnRR, aes(y = yi, x = ocean_meta_data$`Year (online)`, size = 1/sqrt(vi))) + geom_point(alpha = 0.3) +
     geom_smooth(method = lm, col = "red", show.legend = FALSE) + labs(x = "Publication Year",
     y = "Correlation Coefficient ", size = "Precision (1/SE)") +
@@ -239,7 +243,7 @@ ggplot(lnRR, aes(y = yi, x = ocean_meta_data$`Year (online)`, size = 1/sqrt(vi))
 ```
 There does appear to be a clear positive relationship with year. The year studies have the same sampling variance (i.e., lower precision). 
 
-```{r}
+```{r timetable, echo=TRUE, eval=TRUE, tab.cap = "timetable"}
 # Quantifying time lag bias using multilevel meta-regression
 
 metareg_time <- rma.mv(lnRR$yi ~ ocean_meta_data$`Year (online)`, V = lnRR$vi, random = list(~1 | Study, ~1 |residual),test = "t", dfs = "contain", data = ocean_meta_data)# Including sampling variance as moderator
@@ -247,13 +251,12 @@ summary(metareg_time)
 ```
 
 ## 9.Formal meta-regression model that includes year as a moderator (fixed effect) to test for time-lag bias
-```{r}
+```{r modtable, echo=TRUE, eval=TRUE, tab.cap = "modtable"}
 MLMA_year <- metafor::rma.mv(lnRR$yi,lnRR$vi,mods=`Year (online)`,random = list(~1|Study,~1|residual),test="t",data = ocean_meta_data)
 MLMA_year
 ```
 
-```{r}
-
+```{r timelagtable, echo=TRUE, eval=TRUE, tab.cap = "timelagtable"}
 r2_time <- orchaRd::r2_ml(metareg_time)  
 r2_time
 # Time-lag explains 2.48% of the variation in effect size yi.
@@ -264,7 +267,7 @@ Time-lag explains `100*r2_time[1]`% of the variation in effect size.
 
 
 ## 10.Formal meta-regression model that includes inverse sampling variance (i.e., 1/(lnRR)) to test for file-drawer biases
-```{r}
+```{r modinvtable, echo=TRUE, eval=TRUE, tab.cap = "modinvtable"}
 # Including inverse sampling variance and year as moderators to account for file-drawer biases
 MLMA_inverse <- metafor::rma.mv(lnRR$yi,lnRR$vi,
                          random = list(~1|Study,~1|residual),
@@ -275,7 +278,7 @@ summary(MLMA_inverse)
 ```
 
 
-```{r}
+```{r inversetable, echo=TRUE, eval=TRUE, tab.cap = "inversetable"}
 r2_time_inv <- orchaRd::r2_ml(MLMA_inverse) 
 r2_time_inv
 # There is no evidence accounting for file-drawer biases
@@ -286,12 +289,15 @@ r2_time_inv
 
 ```{r}
 # Based on the results of the meta-regression, there is a potential lag bias. That occurs when the speed of publication of the studies included in a review, depends on the direction and strength of their results. Those studies which report significant results, or strong associations, may be published sooner than those that report non-significant results, or weak associations.
+# There is also the impact of impact factor on publication bias, because articles with strong correlation are more likely to be published in high-impact journals, that is, articles with strong effect sizes have a higher impact factor, which also leads to publication bias. reason.
 ```
 
 ## 12.Identify any studies contributing to publication bias. How do your updated meta-analysis results compare with a meta-analysis by Clement et. al. (2022)? Are there any concerns about these studies? If so, describe using references to existing papers what concerns have been raised?
 
 ```{r}
-# 那些研究中具有较小的
+# The article by *Munday et al.(2010)* may have contributed to article bias because some of the studies in the article had too small effect sizes.
+# *Clement et. al. (2022)* meta-analysis focused on the declining impact of ocean acidification and fish activity over a decade, and because of issues in some journals, high-impact studies are more likely to be published in journals with higher impact factors, There are others that contribute to publication bias.
+# My analysis is for time and heterogeneity between samples for the articles, and as with these articles, all results point to a convergence in the effects of seawater acidification on fish activity in recent years. Some correlations or significance may be deliberately exaggerated for these studies in order to be published in more influential journals. Moreover, high impact journals can also lead to high citation rates, which can also lead to biased articles and can receive strong publicity that can be overspent on this. (*Clement et. al. (2022)*)
 ```
 
 
