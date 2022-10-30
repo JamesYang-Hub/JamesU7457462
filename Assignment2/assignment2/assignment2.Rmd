@@ -84,12 +84,16 @@ ocean_meta_data <- rbind(ocean_meat_data,Clark_meta_data)
 ocean_meta_data <- ocean_meta_data %>% filter(ctrl.mean>0,oa.mean>0)
 colnames(ocean_meta_data)[14] <- 'sti_type'
 
+ocean_meta_data <- ocean_meta_data %>% mutate(residual = 1:n()) # Add this observation level variable. 
 ```
+
+
+
+
 ## 4. Correctly calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s `escalc()` function.
 ```{r}
 
 lnRR <- metafor::escalc(measure='ROM',n1i = ocean_meta_data$ctrl.n ,n2i=ocean_meta_data$oa.n ,m1i=ocean_meta_data$ctrl.mean ,m2i= ocean_meta_data$oa.mean ,sd1i=ocean_meta_data$ctrl.sd,sd2i=ocean_meta_data$oa.sd,var.names=c("yi","vi"))
-lnRR$vi
 ```
 
 ## 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s `rma.mv()` function.
@@ -122,14 +126,14 @@ predict(MLMA)
 
 ### Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
 ```{r}
-forest(MLMA,,order ="Year(online)")
+forest(MLMA)
 ```
 
 
 ## 7. Funnel plot for visually assessing the possibility of publication bias.
 ```{r}
 MLMA2 <- metafor::rma.mv(lnRR$yi,lnRR$vi,
-                         random = ~`Year (online)`|`Cue/stimulus type`,
+                         random = ~Study|residual,
                          mods = ~`Year (online)`,
                          test="t",data = ocean_meta_data)
 MLMA2
@@ -138,7 +142,7 @@ MLMA2
 ```
 
 ```{r}
-slemodel(MLMA2)
+
 funnel(trimfill(MLMA2),lengend = TRUE)
 ```
 
