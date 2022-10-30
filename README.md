@@ -41,8 +41,7 @@ The data used are a total of 92 meta-analysis articles consisting of data on the
 
 # File structure
 
-文件结构可以从data文件夹中的（meta-data_ocean_meta.csv）文件看到，如下表所示。
-
+The file structure can be seen in the (meta-data_ocean_meta.csv) file in the data folder, as shown in the table below.
 | **Column heading**                           | **Description**                                              |
 | -------------------------------------------- | ------------------------------------------------------------ |
 | **Study**                                    | Code for each individual study                               |
