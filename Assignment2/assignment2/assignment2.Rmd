@@ -7,6 +7,8 @@ output: html_document
 
 
 # Assignment2: Statistical Analysis and Interpretation 
+(Github Repository: https://github.com/JamesYang-Hub/JamesU7457462)
+
 ## 1. Correct analysis of *Clark et al. (2020)* data to generate the summary statistics (means, SD, N) for each of the fish species’ average activity for each treatment.
 ### Libraries and Packages
 
