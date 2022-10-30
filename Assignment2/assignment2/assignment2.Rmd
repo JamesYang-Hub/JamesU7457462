@@ -83,7 +83,7 @@ ocean_meta_data <- rbind(ocean_meat_data,Clark_meta_data)
 # eliminate some unresonable data
 ocean_meta_data <- ocean_meta_data %>% filter(ctrl.mean>0,oa.mean>0)
 colnames(ocean_meta_data)[14] <- 'sti_type'
-
+# Add in observation-level (residual) column. This column simply counts, from 1 to the number of rows
 ocean_meta_data <- ocean_meta_data %>% mutate(residual = 1:n()) # Add this observation level variable. 
 ```
 
@@ -93,14 +93,21 @@ ocean_meta_data <- ocean_meta_data %>% mutate(residual = 1:n()) # Add this obser
 ## 4. Correctly calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s `escalc()` function.
 ```{r}
 
-lnRR <- metafor::escalc(measure='ROM',n1i = ocean_meta_data$ctrl.n ,n2i=ocean_meta_data$oa.n ,m1i=ocean_meta_data$ctrl.mean ,m2i= ocean_meta_data$oa.mean ,sd1i=ocean_meta_data$ctrl.sd,sd2i=ocean_meta_data$oa.sd,var.names=c("yi","vi"))
+lnRR <- metafor::escalc(measure='ROM',
+                        n1i = ocean_meta_data$ctrl.n ,n2i=ocean_meta_data$oa.n ,
+                        m1i=ocean_meta_data$ctrl.mean ,m2i= ocean_meta_data$oa.mean ,
+                        sd1i=ocean_meta_data$ctrl.sd,sd2i=ocean_meta_data$oa.sd,
+                        var.names=c("yi","vi"),data = ocean_meta_data,
+                        slab=paste(ocean_meta_data$Authors,ocean_meta_data$`Year (online)`,sep = ","))
+view(lnRR)
 ```
 
 ## 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s `rma.mv()` function.
 ```{r}
 # regular random-effects model using `rma.mv()`
-MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|`Climate (FishBase)`),test="t",data = ocean_meta_data)
+MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|Study,~1|residual),test="t",data = ocean_meta_data)
 MLMA
+
 # estimate：估测的真实效应量
 # zval & pval:p值
 # ci.lb & ci.ub: 95%置信区间 (根据”样本所在的总体”求得的效应量的精确度)
@@ -110,7 +117,9 @@ MLMA
 ## 6.Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
 ### Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
 ```{r}
-
+predict(MLMA,digits = 3)
+# 置信区间
+confint(MLMA)
 ```
 
 
@@ -118,6 +127,16 @@ MLMA
 
 
 ### Measures of heterogeneity in effect size estimates across studies (i.e., I^2 and/or prediction intervals - see `predict()` function in metafor)
+```{r}
+library(orchaRd)
+i2_vals <- orchaRd::i2_ml(MLMA)
+i2 <- tibble(type = firstup(gsub("I2_", "", names(i2_vals))), I2 = i2_vals)
+flextable(i2) %>%
+    align(part = "header", align = "center") %>%
+    compose(part = "header", j = 1, value = as_paragraph(as_b("Type"))) %>%
+    compose(part = "header", j = 2, value = as_paragraph(as_b("I"), as_b(as_sup("2")),
+        as_b("(%)")))
+```
 
 
 ```{r}
@@ -126,6 +145,19 @@ predict(MLMA)
 
 ### Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
 ```{r}
+# 不同study样本的影响力
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
 forest(MLMA)
 ```
 
@@ -143,8 +175,19 @@ MLMA2
 
 ```{r}
 
-funnel(trimfill(MLMA2),lengend = TRUE)
+funnel(MLMA2)
+# Lets make a funnel plot to visualize the data in relation to the precision, inverse sampling standard error,
+cc <- metafor::funnel(MLMA,refline=0, level=c(90, 95, 99), 
+       shade=c("white", "gray", "darkgray"))  
 ```
+
+```{r}
+# flip around the funnel plot
+ggplot(MLMA, aes(y = yi, x = vi)) + geom_point() + geom_smooth(method = lm) +
+    labs(y = "Fisher's Z-transformed Correlation Coefficient (Zr)", x = "Sampling Variance of Zr") +
+    theme_classic()
+```
+
 
 
 ```{r}
