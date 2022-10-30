@@ -70,6 +70,7 @@ ocean_paper <- read_csv(paper_path)
 ocean_paper <- ocean_paper %>% mutate_at('Cue/stimulus type', ~replace(., is.na(.), '-'))
 # merge the tibbles
 Clark_meta_data <- cbind(ocean_paper,data_Clark_activity_mean_sd) 
+
 ```
 
 ## 3. Through coding, correctly merge the combined summary statistics and metadata from Clark et al. (2020) (output from 1 & 2) into the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
@@ -81,6 +82,8 @@ ocean_meat_data <- read_csv(ocean_meat_path)
 ocean_meta_data <- rbind(ocean_meat_data,Clark_meta_data) 
 # eliminate some unresonable data
 ocean_meta_data <- ocean_meta_data %>% filter(ctrl.mean>0,oa.mean>0)
+colnames(ocean_meta_data)[14] <- 'sti_type'
+
 ```
 ## 4. Correctly calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s `escalc()` function.
 ```{r}
@@ -94,6 +97,10 @@ lnRR$vi
 # regular random-effects model using `rma.mv()`
 MLMA <- metafor::rma.mv(lnRR$yi,lnRR$vi,random = list(~1|Study),test="t",data = ocean_meta_data)
 MLMA
+# estimate：估测的真实效应量
+# zval & pval:p值
+# ci.lb & ci.ub: 95%置信区间 (根据”样本所在的总体”求得的效应量的精确度)
+# ***注意：如果输入的效应量是Fisher's Z或者logit的话，记得先分别转换成r、OR再解释结果！***
 ```
 
 ## 6.Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
@@ -106,17 +113,22 @@ MLMA
 
 
 
-### Measures of heterogeneity in effect size estimates across studies (i.e., I^2 and/or prediction intervals - see predict() function in metafor)
+### Measures of heterogeneity in effect size estimates across studies (i.e., I^2 and/or prediction intervals - see `predict()` function in metafor)
 
 
 ```{r}
-
+predict(MLMA)
 ```
 
 ### Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
 ```{r}
-
+forest(MLMA,,order ="Year(online)")
 ```
 
 
+## Funnel plot for visually assessing the possibility of publication bias.
+```{r}
+funnel(MLMA )
+# 从图来看，图形左右对称性好，因此可能不存在发表偏倚
+```
 
