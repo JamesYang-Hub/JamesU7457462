@@ -50,6 +50,7 @@ mean_sd <- list(mean=~mean(.x, na.rm = TRUE),
 )
 data_Clark_mean_sd <- data_Clark %>% select(species,treatment,sl,size,activity) %>% group_by(species,treatment,size)%>% summarise(across(where(is.numeric), mean_sd),N=n()) 
 data_Clark_mean_sd%>% flextable(,col_keys = c("species","treatement","size","sl_mean","sl_sd","activity_mean","activity_sd","N")) %>% add_header_row(, values = c("", "sl","activity",""), colwidths = c(3, 2,2,1)) %>% align(, i = 1, part = "header", align = "center")
+
 ```
 
 ## 2.Through coding, merge the summary statistics generated from 1) with the metadata  from *Clark et al. (2020)*.
@@ -58,7 +59,7 @@ data_Clark_mean_sd%>% flextable(,col_keys = c("species","treatement","size","sl_
 # calculate mean/SD/N of activity group by treatment
 data_Clark_activity_mean_sd <- data_Clark %>% select(species,treatment,activity) %>% group_by(species,treatment)%>% summarise(across(where(is.numeric), mean_sd),N=n()) 
 # use `pivot_wider()` to separate the activity value of treatment
-data_Clark_activity_mean_sd <- data_Clark_activity_mean_sd %>% pivot_wider(names_from = treatment,values_from =c(activity_mean,activity_sd,N) ) 
+data_Clark_activity_mean_sd <- data_Clark_activity_mean_sd %>% pivot_wider(names_from = t55454554454454reatment,values_from =c(activity_mean,activity_sd,N) ) 
 # rename the columns
 names(data_Clark_activity_mean_sd) <-c('Species','oa.mean','ctrl.mean','oa.sd','ctrl.sd','oa.n','ctrl.n')
 data_Clark_activity_mean_sd
